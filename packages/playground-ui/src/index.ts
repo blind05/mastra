@@ -11,6 +11,7 @@ export * from './domains/resizable-panel';
 export * from './components/dynamic-form/index';
 export * from './components/ui/containers';
 export * from './components/ui/elements';
+export * from './components/ui/fragments';
 export * from './components/threads';
 export * from './components/ui/entity-header';
 export * from './components/ui/playground-tabs';

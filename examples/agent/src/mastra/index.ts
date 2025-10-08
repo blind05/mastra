@@ -32,6 +32,18 @@ export const mastra = new Mastra({
   },
   logger: new PinoLogger({ name: 'Chef', level: 'debug' }),
   storage,
+  // observability: {
+  //   instances: {
+  //     default: {
+  //       serviceName: 'mastra-app',
+  //       exporters: [new DefaultExporter({ strategy: 'realtime' })],
+  //     },
+  //   },
+  // },
+  observability: {
+    default: { enabled: true },
+    configs: [],
+  },
   mcpServers: {
     myMcpServer,
     myMcpServerTwo,

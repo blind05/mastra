@@ -4,9 +4,36 @@ import { AppSidebar } from './ui/app-sidebar';
 import { SidebarProvider } from './ui/sidebar';
 import { Toaster } from './ui/sonner';
 import { ThemeProvider } from './ui/theme-provider';
+import { AppLayout, AppHeader, AppHeaderLogo, AppHeaderStars } from '@mastra/playground-ui';
+import { MainNav } from './main-nav';
+import App from '@/App';
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
-  return (
+  const newUIEnabled = true;
+
+  return newUIEnabled ? (
+    <ThemeProvider defaultTheme="dark" attribute="class">
+      <AppLayout>
+        <AppHeader>
+          <AppHeaderLogo variant="playground" /> <AppHeaderStars />
+        </AppHeader>
+        <MainNav />
+        {children}
+        <Toaster position="bottom-right" />
+      </AppLayout>
+
+      {/* <SidebarProvider>
+            <PageLayout>
+              <PageHeader>
+                <PageHeaderLogo variant="playground" /> <PageHeaderStars />
+              </PageHeader>
+              <AppSidebar />
+              {children}
+              <Toaster position="bottom-right" />
+            </PageLayout>
+          </SidebarProvider> */}
+    </ThemeProvider>
+  ) : (
     <div className="bg-surface1 font-sans h-screen">
       <ThemeProvider defaultTheme="dark" attribute="class">
         <SidebarProvider>
