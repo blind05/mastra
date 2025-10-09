@@ -28,18 +28,16 @@ export function SideDialogNav({ onNext, onPrevious, className }: SideDialogNavPr
       )}
     >
       {(onNext || onPrevious) && (
-        <>
-          <div className={cn('flex gap-[1rem] items-baseline')}>
-            <Button onClick={handleOnPrevious} disabled={!onPrevious} variant="ghost">
-              Previous
-              <ArrowUpIcon />
-            </Button>
-            <Button onClick={handleOnNext} disabled={!onNext} variant="ghost">
-              Next
-              <ArrowDownIcon />
-            </Button>
-          </div>
-        </>
+        <div className={cn('flex gap-[1rem] items-baseline')}>
+          <Button onClick={handleOnPrevious} disabled={!onPrevious} variant="ghost">
+            Previous
+            <ArrowUpIcon />
+          </Button>
+          <Button onClick={handleOnNext} disabled={!onNext} variant="ghost">
+            Next
+            <ArrowDownIcon />
+          </Button>
+        </div>
       )}
     </div>
   );

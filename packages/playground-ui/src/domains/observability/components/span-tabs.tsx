@@ -11,8 +11,8 @@ import {
 import { TraceSpanUsage } from './trace-span-usage';
 import { SpanDetails } from './span-details';
 import { CircleGaugeIcon } from 'lucide-react';
-import { GetScoresResponse } from 'node_modules/@mastra/client-js/dist/types';
-import { AISpanRecord } from 'node_modules/@mastra/core/dist/storage/index.warning';
+import { GetScoresResponse } from '@mastra/client-js';
+import { AISpanRecord } from '@mastra/core';
 
 type SpanTabsProps = {
   trace?: AISpanRecord;
@@ -22,10 +22,6 @@ type SpanTabsProps = {
   isLoadingSpanScoresData?: boolean;
   spanInfo?: KeyValueListItemData[];
   isOpen: boolean;
-  onClose?: () => void;
-  onNext?: () => void;
-  onPrevious?: () => void;
-  onViewToggle?: () => void;
   defaultActiveTab?: string;
   initialScoreId?: string;
   computeTraceLink: (traceId: string, spanId?: string) => string;

@@ -104,7 +104,7 @@ export function SpanScoreList({
                     onClick={() => handleOnScore(score.id)}
                     entry={entry}
                   >
-                    {(traceScoresListColumns || []).map(col => {
+                    {traceScoresListColumns.map(col => {
                       const key = `col-${col.name}`;
                       return (
                         <EntryList.EntryText key={key}>{entry?.[col.name as keyof typeof entry]}</EntryList.EntryText>

@@ -28,7 +28,7 @@ export function TraceTimeline({ hierarchicalSpans = [], onSpanClick, selectedSpa
         </div>
       ) : (
         <div
-          className={cn('grid items-start content-start gap-y-[2px] overflow-hidden', 'xl:gap-x-[1rem] xl:py-[1rem] ', {
+          className={cn('grid items-start content-start gap-y-[2px] overflow-hidden', 'xl:gap-x-[1rem] xl:py-[1rem]', {
             'xl:grid-cols-[3fr_auto]': !overallEndTime,
             'xl:grid-cols-[3fr_2fr]': overallEndTime,
           })}

@@ -7,5 +7,5 @@ type SectionHeaderProps = {
 };
 
 export function SectionHeader({ children, className }: SectionHeaderProps) {
-  return <header className={cn('grid items-center grid-cols-[1fr_auto] ', className)}>{children}</header>;
+  return <header className={cn('grid items-center grid-cols-[1fr_auto]', className)}>{children}</header>;
 }

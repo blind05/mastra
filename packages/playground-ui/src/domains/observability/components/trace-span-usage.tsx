@@ -183,7 +183,7 @@ export function TraceSpanUsage({ traceUsage, traceSpans = [], spanUsage, classNa
         >
           <div
             className={cn(
-              'grid grid-cols-[1.5rem_1fr_auto] gap-[.5rem] items-center ',
+              'grid grid-cols-[1.5rem_1fr_auto] gap-[.5rem] items-center',
               '[&>svg]:w-[1.5em] [&>svg]:h-[1.5em] [&>svg]:opacity-70',
             )}
           >

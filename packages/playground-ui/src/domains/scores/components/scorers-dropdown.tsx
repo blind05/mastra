@@ -16,7 +16,7 @@ export interface ScorersDropdownProps {
 export const ScorersDropdown = ({ trace, spanId, onScorerTriggered, entityType }: ScorersDropdownProps) => {
   const { data: scorers = {}, isLoading } = useScorers();
   const [selectedScorer, setSelectedScorer] = useState<string | null>(null);
-  const { mutate: triggerScorer, isPending, isSuccess, isError, error } = useTriggerScorer();
+  const { mutate: triggerScorer, isPending, isSuccess } = useTriggerScorer();
 
   let scorerList = Object.entries(scorers)
     .map(([key, scorer]) => ({

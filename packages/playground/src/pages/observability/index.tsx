@@ -44,8 +44,6 @@ export default function Observability() {
   const { data: agents, isLoading: isLoadingAgents } = useAgents();
   const { data: workflows, isLoading: isLoadingWorkflows } = useWorkflows();
 
-  console.log({ paths });
-
   const { data: aiTrace, isLoading: isLoadingAiTrace } = useAITrace(selectedTraceId, { enabled: !!selectedTraceId });
 
   const traceId = searchParams.get('traceId');
