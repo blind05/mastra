@@ -28,6 +28,7 @@ type SpanTabsProps = {
   onViewToggle?: () => void;
   defaultActiveTab?: string;
   initialScoreId?: string;
+  computeTraceLink: (traceId: string, spanId?: string) => string;
 };
 
 export function SpanTabs({
@@ -39,6 +40,7 @@ export function SpanTabs({
   spanInfo = [],
   defaultActiveTab = 'details',
   initialScoreId,
+  computeTraceLink,
 }: SpanTabsProps) {
   const { Link } = useLinkComponent();
 
@@ -80,6 +82,7 @@ export function SpanTabs({
               initialScoreId={initialScoreId}
               traceId={trace?.traceId}
               spanId={span?.spanId}
+              computeTraceLink={computeTraceLink}
             />
           </Section>
         </Sections>

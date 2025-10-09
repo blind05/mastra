@@ -267,6 +267,7 @@ export function TraceDialog({
                     defaultActiveTab={spanDialogDefaultTab}
                     initialScoreId={initialScoreId}
                     isOpen={Boolean(dialogIsOpen && selectedSpanId && combinedView)}
+                    computeTraceLink={computeTraceLink}
                   />
                 </div>
               </div>
