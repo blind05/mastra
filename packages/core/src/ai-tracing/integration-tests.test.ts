@@ -618,7 +618,7 @@ const mockModelV2 = new MockLanguageModelV2({
             type: 'tool-call',
             toolCallId: toolCall.toolCallId,
             toolName: toolCall.toolName,
-            args: toolCall.args,
+            args: JSON.stringify(toolCall.args),
             input: JSON.stringify(toolCall.args),
           },
           { type: 'finish', finishReason: 'tool-calls', usage: { inputTokens: 15, outputTokens: 10, totalTokens: 25 } },
@@ -1116,6 +1116,7 @@ describe('AI Tracing Integration Tests', () => {
 
         const agentRunSpans = testExporter.getSpansByType(AISpanType.AGENT_RUN);
         const llmGenerationSpans = testExporter.getSpansByType(AISpanType.LLM_GENERATION);
+        const llmChunkSpans = testExporter.getSpansByType(AISpanType.LLM_CHUNK);
         const toolCallSpans = testExporter.getSpansByType(AISpanType.TOOL_CALL);
         const workflowSpans = testExporter.getSpansByType(AISpanType.WORKFLOW_RUN);
         const workflowSteps = testExporter.getSpansByType(AISpanType.WORKFLOW_STEP);
@@ -1125,6 +1126,13 @@ describe('AI Tracing Integration Tests', () => {
         expect(toolCallSpans.length).toBe(1); // one tool call (calculator)
         expect(workflowSpans.length).toBe(0); // no workflows
         expect(workflowSteps.length).toBe(0); // no workflows
+
+        // For non-legacy methods with tool calls:
+        // The agent makes an initial call that results in a tool call (1 tool-execution chunk)
+        // Note: We don't track text chunks for these tests since the mocks don't emit text-start/end
+        // We only track the tool-execution event span
+        const expectedChunks = name.includes('Legacy') ? 0 : 1;
+        expect(llmChunkSpans.length).toBe(expectedChunks);
 
         const agentRunSpan = agentRunSpans[0];
         const llmGenerationSpan = llmGenerationSpans[0];
@@ -1186,6 +1194,7 @@ describe('AI Tracing Integration Tests', () => {
 
         const agentRunSpans = testExporter.getSpansByType(AISpanType.AGENT_RUN);
         const llmGenerationSpans = testExporter.getSpansByType(AISpanType.LLM_GENERATION);
+        const llmChunkSpans = testExporter.getSpansByType(AISpanType.LLM_CHUNK);
         const toolCallSpans = testExporter.getSpansByType(AISpanType.TOOL_CALL);
         const workflowSpans = testExporter.getSpansByType(AISpanType.WORKFLOW_RUN);
         const workflowSteps = testExporter.getSpansByType(AISpanType.WORKFLOW_STEP);
@@ -1193,6 +1202,13 @@ describe('AI Tracing Integration Tests', () => {
         expect(agentRunSpans.length).toBe(1); // one agent run
         expect(llmGenerationSpans.length).toBe(1); // tool call
         expect(toolCallSpans.length).toBe(1); // one tool call (calculator)
+
+        // For non-legacy methods with tool calls:
+        // The agent makes an initial call that results in a tool call (1 tool-execution chunk)
+        // Note: We don't track text chunks for these tests since the mocks don't emit text-start/end
+        // We only track the tool-execution event span
+        const expectedChunks = name.includes('Legacy') ? 0 : 1;
+        expect(llmChunkSpans.length).toBe(expectedChunks);
 
         const agentRunSpan = agentRunSpans[0];
         const llmGenerationSpan = llmGenerationSpans[0];
@@ -1337,6 +1353,7 @@ describe('AI Tracing Integration Tests', () => {
 
         const agentRunSpans = testExporter.getSpansByType(AISpanType.AGENT_RUN);
         const llmGenerationSpans = testExporter.getSpansByType(AISpanType.LLM_GENERATION);
+        const llmChunkSpans = testExporter.getSpansByType(AISpanType.LLM_CHUNK);
         const processorRunSpans = testExporter.getSpansByType(AISpanType.PROCESSOR_RUN);
         const toolCallSpans = testExporter.getSpansByType(AISpanType.TOOL_CALL);
         const workflowSpans = testExporter.getSpansByType(AISpanType.WORKFLOW_RUN);
@@ -1355,6 +1372,10 @@ describe('AI Tracing Integration Tests', () => {
         expect(toolCallSpans.length).toBe(0); // no tools
         expect(workflowSpans.length).toBe(0); // no workflows
         expect(workflowSteps.length).toBe(0); // no workflows
+        // For structured output, the mocks only emit text-delta chunks without text-start/end
+        // Since we don't create spans for individual delta chunks, we expect 0 spans
+        const expectedChunks = 0;
+        expect(llmChunkSpans.length).toBe(expectedChunks);
 
         // Identify the Test Agent spans vs processor agent spans
         const testAgentSpan = agentRunSpans.find(span => span.name?.includes('Test Agent'));

@@ -2,7 +2,8 @@ import { EventEmitter } from 'events';
 import { ReadableStream, TransformStream } from 'stream/web';
 import { TripWire } from '../../agent';
 import { MessageList } from '../../agent/message-list';
-import { getValidTraceId } from '../../ai-tracing';
+import { AISpanType, getValidTraceId } from '../../ai-tracing';
+import type { AISpan } from '../../ai-tracing';
 import { MastraBase } from '../../base';
 import { safeParseErrorObject } from '../../error/utils.js';
 import { STRUCTURED_OUTPUT_PROCESSOR_NAME } from '../../processors/processors/structured-output';
@@ -57,6 +58,91 @@ export function createDestructurableOutput<OUTPUT extends OutputSchema = undefin
       return originalValue;
     },
   }) as MastraModelOutput<OUTPUT>;
+}
+
+/**
+ * Helper class to manage LLM_CHUNK span tracking
+ */
+class ChunkSpanTracker {
+  private parentSpan?: AISpan<AISpanType>;
+  private currentSpan?: AISpan<AISpanType>;
+  private completedSpans: AISpan<AISpanType>[] = [];
+  private accumulator: string = '';
+  private isEnabled: boolean;
+
+  constructor(parentSpan?: AISpan<AISpanType>, isLLMExecutionStep?: boolean) {
+    this.parentSpan = parentSpan;
+    // Only enable tracking if we have a parent span and we're in LLM execution context
+    this.isEnabled = !!parentSpan && !!isLLMExecutionStep;
+  }
+
+  /**
+   * Create a new chunk span (for multi-part chunks like text-start/delta/end)
+   */
+  startSpan(chunkType: string, input?: any) {
+    if (!this.isEnabled) return;
+
+    this.currentSpan = this.parentSpan?.createChildSpan({
+      name: `chunk: ${chunkType}`,
+      type: AISpanType.LLM_CHUNK,
+      attributes: {
+        chunkType,
+        sequenceNumber: this.completedSpans.length,
+      },
+      input,
+    });
+    this.accumulator = '';
+  }
+
+  /**
+   * Add content to the accumulator for the current span
+   */
+  accumulate(content: string) {
+    if (!this.isEnabled) return;
+    this.accumulator += content;
+  }
+
+  /**
+   * End the current span and add it to completed spans
+   */
+  endCurrentSpan() {
+    if (!this.isEnabled || !this.currentSpan) return;
+
+    this.currentSpan.end({
+      output: this.accumulator,
+    });
+    this.completedSpans.push(this.currentSpan);
+    this.currentSpan = undefined;
+    this.accumulator = '';
+  }
+
+  /**
+   * Create an event span (for single chunks like tool-call)
+   */
+  createEventSpan(chunkType: string, output: any) {
+    if (!this.isEnabled) return;
+
+    const span = this.parentSpan?.createEventSpan({
+      name: `chunk: ${chunkType}`,
+      type: AISpanType.LLM_CHUNK,
+      attributes: {
+        chunkType,
+        sequenceNumber: this.completedSpans.length,
+      },
+      output,
+    });
+
+    if (span) {
+      this.completedSpans.push(span);
+    }
+  }
+
+  /**
+   * Get all completed spans
+   */
+  getCompletedSpans(): AISpan<AISpanType>[] {
+    return this.completedSpans;
+  }
 }
 
 export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends MastraBase {
@@ -137,6 +223,9 @@ export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends 
   #returnScorerData = false;
   #structuredOutputMode: 'direct' | 'processor' | undefined = undefined;
 
+  // LLM_CHUNK span tracking
+  #chunkSpanTracker?: ChunkSpanTracker;
+
   #model: {
     modelId: string | undefined;
     provider: string | undefined;
@@ -184,6 +273,9 @@ export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends 
     this.#returnScorerData = !!options.returnScorerData;
     this.runId = options.runId;
     this.traceId = getValidTraceId(options.tracingContext?.currentSpan);
+
+    // Initialize chunk span tracker
+    this.#chunkSpanTracker = new ChunkSpanTracker(options.tracingContext?.currentSpan, options.isLLMExecutionStep);
 
     this.#model = _model;
 
@@ -318,6 +410,9 @@ export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends 
               self.#bufferedSources.push(chunk);
               self.#bufferedByStep.sources.push(chunk);
               break;
+            case 'text-start':
+              self.#chunkSpanTracker?.startSpan('text');
+              break;
             case 'text-delta':
               self.#bufferedText.push(chunk.payload.text);
               self.#bufferedByStep.text += chunk.payload.text;
@@ -326,9 +421,18 @@ export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends 
                 ary.push(chunk.payload.text);
                 self.#bufferedTextChunks[chunk.payload.id] = ary;
               }
+              // Accumulate text for the current text span (started by text-start)
+              self.#chunkSpanTracker?.accumulate(chunk.payload.text);
+              break;
+            case 'text-end':
+              self.#chunkSpanTracker?.endCurrentSpan();
               break;
             case 'tool-call-input-streaming-start':
               self.#toolCallDeltaIdNameMap[chunk.payload.toolCallId] = chunk.payload.toolName;
+              self.#chunkSpanTracker?.startSpan('tool-input', {
+                toolName: chunk.payload.toolName,
+                toolCallId: chunk.payload.toolCallId,
+              });
               break;
             case 'tool-call-delta':
               if (!self.#toolCallArgsDeltas[chunk.payload.toolCallId]) {
@@ -337,6 +441,11 @@ export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends 
               self.#toolCallArgsDeltas?.[chunk.payload.toolCallId]?.push(chunk.payload.argsTextDelta);
               // mutate chunk to add toolname, we need it later to look up tools by their name
               chunk.payload.toolName ||= self.#toolCallDeltaIdNameMap[chunk.payload.toolCallId];
+              // Accumulate args text for LLM_CHUNK span
+              self.#chunkSpanTracker?.accumulate(chunk.payload.argsTextDelta);
+              break;
+            case 'tool-call-input-streaming-end':
+              self.#chunkSpanTracker?.endCurrentSpan();
               break;
             case 'file':
               self.#bufferedFiles.push(chunk);
@@ -353,6 +462,7 @@ export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends 
                   text: '',
                 },
               };
+              self.#chunkSpanTracker?.startSpan('reasoning', {});
               break;
             case 'reasoning-delta': {
               self.#bufferedReasoning.push({
@@ -375,6 +485,8 @@ export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends 
                   bufferedReasoning.payload.providerMetadata = chunk.payload.providerMetadata;
                 }
               }
+              // Accumulate reasoning text for LLM_CHUNK span
+              self.#chunkSpanTracker?.accumulate(chunk.payload.text);
               break;
             }
 
@@ -383,6 +495,7 @@ export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends 
               if (chunk.payload.providerMetadata && bufferedReasoning) {
                 bufferedReasoning.payload.providerMetadata = chunk.payload.providerMetadata;
               }
+              self.#chunkSpanTracker?.endCurrentSpan();
               break;
             }
             case 'tool-call':
@@ -397,6 +510,12 @@ export class MastraModelOutput<OUTPUT extends OutputSchema = undefined> extends 
                   self.updateUsageCount(finishPayload.usage);
                 }
               }
+              // Create event span for tool execution
+              self.#chunkSpanTracker?.createEventSpan('tool-execution', {
+                toolName: chunk.payload.toolName,
+                toolCallId: chunk.payload.toolCallId,
+                args: chunk.payload.args,
+              });
               break;
             case 'tool-result':
               self.#toolResults.push(chunk);
