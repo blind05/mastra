@@ -2,7 +2,7 @@ import { Agent } from '@mastra/core/agent';
 import { openai, openai as openai_v5 } from '@ai-sdk/openai-v5';
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { lessComplexWorkflow, myWorkflow } from '../workflows';
+import { lessComplexWorkflow, workflowRecipeMaker } from '../workflows';
 import { Memory } from '@mastra/memory';
 import { ModerationProcessor } from '@mastra/core/processors';
 import { logDataMiddleware } from '../../model-middleware';
@@ -48,7 +48,7 @@ export const chefModelV2Agent = new Agent({
     weatherInfo,
   },
   workflows: {
-    myWorkflow,
+    workflowRecipeMaker,
     lessComplexWorkflow,
   },
   scorers: ({ mastra }) => {
@@ -82,7 +82,7 @@ const weatherAgent = new Agent({
     weatherInfo,
   },
   workflows: {
-    myWorkflow,
+    workflowRecipeMaker,
   },
 });
 
