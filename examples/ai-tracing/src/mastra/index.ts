@@ -74,12 +74,12 @@ const storyAgent = new Agent({
       stripControlChars: true,
       collapseWhitespace: true,
     }),
-    new PromptInjectionDetector({
-      model: openai("gpt-4.1-nano"),
-      threshold: 0.8,
-      strategy: 'rewrite',
-      detectionTypes: ['injection', 'jailbreak', 'system-override'],
-    })
+    // new PromptInjectionDetector({
+    //   model: openai("gpt-4.1-nano"),
+    //   threshold: 0.8,
+    //   strategy: 'rewrite',
+    //   detectionTypes: ['injection', 'jailbreak', 'system-override'],
+    // })
   ],
   tools: {
     characterTool,
