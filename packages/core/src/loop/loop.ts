@@ -1,5 +1,6 @@
 import { generateId } from 'ai-v5';
 import type { ToolSet } from 'ai-v5';
+import { createChunkTracingTransform } from '../ai-tracing';
 import { ErrorCategory, ErrorDomain, MastraError } from '../error';
 import { ConsoleLogger } from '../logger';
 import type { ProcessorState } from '../processors';
@@ -132,7 +133,10 @@ export function loop<Tools extends ToolSet = ToolSet, OUTPUT extends OutputSchem
     ...rest,
   };
 
-  const stream = workflowLoopStream(workflowLoopProps);
+  const baseStream = workflowLoopStream(workflowLoopProps);
+
+  // Apply chunk tracing transform to track LLM_CHUNK spans
+  const stream = baseStream.pipeThrough(createChunkTracingTransform(rest.chunkSpanTracker));
 
   modelOutput = new MastraModelOutput({
     model: {

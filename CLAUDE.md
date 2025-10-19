@@ -99,6 +99,13 @@ Mastra is a modular AI framework built around central orchestration with pluggab
 
 ## Development Guidelines
 
+### Coding Style
+
+- **Never use inline imports** - Always use proper import statements at the top of files
+  - ❌ Bad: `chunkSpanTracker?: import('../ai-tracing').ChunkSpanTracker`
+  - ✅ Good: Import at top of file, then use type in declaration
+- Use explicit imports rather than type-only imports when the value may be used at runtime
+
 ### Documentation Writing
 
 Follow `.cursor/rules/writing-documentation.mdc`:
