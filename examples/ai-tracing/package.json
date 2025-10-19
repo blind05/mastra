@@ -11,6 +11,7 @@
     "@mastra/loggers": "latest",
     "@mastra/mcp": "latest",
     "@mastra/memory": "latest",
+    "@ai-sdk/openai-v5": "npm:@ai-sdk/openai@2.0.38",
     "zod": "^3.25.76"
   },
   "devDependencies": {
