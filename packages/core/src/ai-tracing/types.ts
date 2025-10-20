@@ -74,18 +74,8 @@ export interface AgentRunAttributes extends AIBaseAttributes {
   maxSteps?: number;
 }
 
-/**
- * LLM Generation attributes
- */
-export interface LLMGenerationAttributes extends AIBaseAttributes {
-  /** Model name (e.g., 'gpt-4', 'claude-3') */
-  model?: string;
-  /** Model provider (e.g., 'openai', 'anthropic') */
-  provider?: string;
-  /** Type of result/output this LLM call produced */
-  resultType?: 'tool_selection' | 'response_generation' | 'reasoning' | 'planning';
-  /** Token usage statistics - supports both v5 and legacy formats */
-  usage?: {
+/** Token usage statistics - supports both v5 and legacy formats */
+export interface UsageStats {
     // VNext paths
     inputTokens?: number;
     outputTokens?: number;
@@ -98,7 +88,20 @@ export interface LLMGenerationAttributes extends AIBaseAttributes {
     cachedInputTokens?: number;
     promptCacheHitTokens?: number;
     promptCacheMissTokens?: number;
-  };
+}
+
+/**
+ * LLM Generation attributes
+ */
+export interface LLMGenerationAttributes extends AIBaseAttributes {
+  /** Model name (e.g., 'gpt-4', 'claude-3') */
+  model?: string;
+  /** Model provider (e.g., 'openai', 'anthropic') */
+  provider?: string;
+  /** Type of result/output this LLM call produced */
+  resultType?: 'tool_selection' | 'response_generation' | 'reasoning' | 'planning';
+  /** Token usage statistics - supports both v5 and legacy formats */
+  usage?: UsageStats,
   /** Model parameters */
   parameters?: {
     maxOutputTokens?: number;
@@ -125,14 +128,14 @@ export interface LLMGenerationAttributes extends AIBaseAttributes {
 export interface LLMStepAttributes extends AIBaseAttributes {
   /** Index of this step in the generation (0, 1, 2, ...) */
   stepIndex?: number;
-  /** Input tokens used in this step */
-  inputTokens?: number;
-  /** Output tokens generated in this step */
-  outputTokens?: number;
-  /** Total tokens for this step */
-  totalTokens?: number;
+  /** Token usage statistics */
+  usage?: UsageStats,
   /** Reason this step finished (stop, tool-calls, length, etc.) */
   finishReason?: string;
+  /** Should execution continue */
+  isContinued?: boolean;
+  /** Result warnings */
+  warnings?: Record<string, any>;
 }
 
 /**
