@@ -1,8 +1,11 @@
 /**
- * LLM Chunk Tracing
+ * LLM Model Span Tracing
  *
- * Provides span tracking for individual LLM streaming chunks within a larger LLM generation.
- * Each LLM_CHUNK span represents a single semantic unit (text block, tool call, reasoning block).
+ * Provides span tracking for LLM generations, including:
+ * - LLM_STEP spans (one per LLM API call)
+ * - LLM_CHUNK spans (individual streaming chunks within a step)
+ *
+ * Hierarchy: LLM_GENERATION -> LLM_STEP -> LLM_CHUNK
  */
 
 import { TransformStream } from 'stream/web';
@@ -12,17 +15,20 @@ import { AISpanType } from './types';
 import type { AISpan } from './types';
 
 /**
- * Manages LLM_CHUNK span tracking for streaming LLM responses.
+ * Manages LLM_STEP and LLM_CHUNK span tracking for streaming LLM responses.
  *
- * Maintains a sequence number across all chunks in a single LLM_GENERATION.
  * Should be instantiated once per LLM_GENERATION span and shared across
  * all streaming steps (including after tool calls).
  */
-export class ChunkSpanTracker {
+export class ModelSpanTracker {
   private modelSpan?: AISpan<AISpanType.LLM_GENERATION>;
-  private chunkSpan?: AISpan<AISpanType.LLM_CHUNK>;
-  private completedSpans: AISpan<AISpanType.LLM_CHUNK>[] = [];
+  private currentStepSpan?: AISpan<AISpanType.LLM_STEP>;
+  private currentChunkSpan?: AISpan<AISpanType.LLM_CHUNK>;
+  private completedChunkSpans: AISpan<AISpanType.LLM_CHUNK>[] = [];
   private accumulator: Record<string, any> = {};
+  private stepIndex: number = 0;
+  private chunkSequence: number = 0;
+  private pendingTokenUsage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
   private isEnabled: boolean;
 
   constructor(modelSpan?: AISpan<AISpanType.LLM_GENERATION>) {
@@ -32,17 +38,75 @@ export class ChunkSpanTracker {
   }
 
   /**
+   * Start a new LLM execution step
+   */
+  startStep() {
+    if (!this.isEnabled) return;
+
+    this.currentStepSpan = this.modelSpan?.createChildSpan({
+      name: `step ${this.stepIndex}`,
+      type: AISpanType.LLM_STEP,
+      attributes: {
+        stepIndex: this.stepIndex,
+      },
+    });
+    // Reset chunk sequence for new step
+    this.chunkSequence = 0;
+    this.pendingTokenUsage = undefined;
+  }
+
+  /**
+   * End the current LLM execution step
+   */
+  endStep(finishReason?: string) {
+    if (!this.isEnabled || !this.currentStepSpan) return;
+
+    // Apply token usage if we have it
+    if (this.pendingTokenUsage) {
+      this.currentStepSpan.update({
+        attributes: {
+          ...this.pendingTokenUsage,
+          finishReason,
+        },
+      });
+    } else if (finishReason) {
+      this.currentStepSpan.update({
+        attributes: {
+          finishReason,
+        },
+      });
+    }
+
+    this.currentStepSpan.end({});
+    this.currentStepSpan = undefined;
+    this.stepIndex++;
+  }
+
+  /**
+   * Store token usage from finish chunk (to be applied when step ends)
+   */
+  setTokenUsage(usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number }) {
+    if (!this.isEnabled) return;
+    this.pendingTokenUsage = usage;
+  }
+
+  /**
    * Create a new chunk span (for multi-part chunks like text-start/delta/end)
    */
   startSpan(chunkType: string, initialData?: Record<string, any>) {
     if (!this.isEnabled) return;
 
-    this.chunkSpan = this.modelSpan?.createChildSpan({
+    // Auto-create step if we see a chunk before step-start
+    if (!this.currentStepSpan) {
+      this.startStep();
+    }
+
+    this.currentChunkSpan = this.currentStepSpan?.createChildSpan({
       name: `chunk: ${chunkType}`,
       type: AISpanType.LLM_CHUNK,
       attributes: {
         chunkType,
-        sequenceNumber: this.completedSpans.length,
+        sequenceNumber: this.chunkSequence,
       },
     });
     this.accumulator = initialData || {};
@@ -69,18 +133,19 @@ export class ChunkSpanTracker {
   }
 
   /**
-   * End the current span and add it to completed spans.
+   * End the current chunk span and add it to completed spans.
    * Safe to call multiple times - will no-op if span already ended.
    */
   endCurrentSpan(output?: any) {
-    if (!this.isEnabled || !this.chunkSpan) return;
+    if (!this.isEnabled || !this.currentChunkSpan) return;
 
-    this.chunkSpan.end({
+    this.currentChunkSpan.end({
       output: output !== undefined ? output : this.accumulator,
     });
-    this.completedSpans.push(this.chunkSpan);
-    this.chunkSpan = undefined;
+    this.completedChunkSpans.push(this.currentChunkSpan);
+    this.currentChunkSpan = undefined;
     this.accumulator = {};
+    this.chunkSequence++;
   }
 
   /**
@@ -89,26 +154,32 @@ export class ChunkSpanTracker {
   createEventSpan(chunkType: string, output: any) {
     if (!this.isEnabled) return;
 
-    const span = this.modelSpan?.createEventSpan({
+    // Auto-create step if we see a chunk before step-start
+    if (!this.currentStepSpan) {
+      this.startStep();
+    }
+
+    const span = this.currentStepSpan?.createEventSpan({
       name: `chunk: ${chunkType}`,
       type: AISpanType.LLM_CHUNK,
       attributes: {
         chunkType,
-        sequenceNumber: this.completedSpans.length,
+        sequenceNumber: this.chunkSequence,
       },
       output,
     });
 
     if (span) {
-      this.completedSpans.push(span);
+      this.completedChunkSpans.push(span);
+      this.chunkSequence++;
     }
   }
 
   /**
-   * Check if there is currently an active span
+   * Check if there is currently an active chunk span
    */
   hasActiveSpan(): boolean {
-    return !!this.chunkSpan;
+    return !!this.currentChunkSpan;
   }
 
   /**
@@ -119,21 +190,21 @@ export class ChunkSpanTracker {
   }
 
   /**
-   * Get all completed spans
+   * Get all completed chunk spans
    */
   getCompletedSpans(): AISpan<AISpanType.LLM_CHUNK>[] {
-    return this.completedSpans;
+    return this.completedChunkSpans;
   }
 }
 
 /**
- * Creates a transform stream that tracks LLM chunks as spans.
+ * Creates a transform stream that tracks LLM steps and chunks as spans.
  *
  * This should be added to the stream pipeline to automatically
- * create LLM_CHUNK spans for each semantic chunk in the stream.
+ * create LLM_STEP and LLM_CHUNK spans for each semantic unit in the stream.
  */
 export function createChunkTracingTransform<OUTPUT extends OutputSchema>(
-  tracker: ChunkSpanTracker | undefined,
+  tracker: ModelSpanTracker | undefined,
 ): TransformStream<ChunkType<OUTPUT>, ChunkType<OUTPUT>> {
   return new TransformStream({
     transform(chunk, controller) {
@@ -301,12 +372,32 @@ export function createChunkTracingTransform<OUTPUT extends OutputSchema>(
           tracker.createEventSpan(chunk.type, chunk.payload);
           break;
 
+        // LLM Step management
+        case 'step-start':
+          tracker.startStep();
+          break;
+
+        case 'finish': {
+          // Extract token usage from finish chunk
+          const usage = (chunk.payload as any)?.usage;
+          if (usage) {
+            tracker.setTokenUsage({
+              inputTokens: usage.inputTokens,
+              outputTokens: usage.outputTokens,
+              totalTokens: usage.totalTokens,
+            });
+          }
+          break;
+        }
+
+        case 'step-finish':
+          // End step with finish reason from finish chunk (already stored)
+          tracker.endStep();
+          break;
+
         case 'raw': // Skip raw chunks as they're redundant
         case 'start':
-        case 'finish':
-        case 'step-start':
-        case 'step-finish':
-          // don't output these steps that don't have helpful output
+          // don't output these chunks that don't have helpful output
           break;
       }
 

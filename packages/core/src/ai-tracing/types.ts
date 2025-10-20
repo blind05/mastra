@@ -21,6 +21,8 @@ export enum AISpanType {
   GENERIC = 'generic',
   /** LLM generation with model calls, token usage, prompts, completions */
   LLM_GENERATION = 'llm_generation',
+  /** Single LLM execution step within a generation (one API call) */
+  LLM_STEP = 'llm_step',
   /** Individual LLM streaming chunk/event */
   LLM_CHUNK = 'llm_chunk',
   /** MCP (Model Context Protocol) tool execution */
@@ -114,6 +116,22 @@ export interface LLMGenerationAttributes extends AIBaseAttributes {
   /** Whether this was a streaming response */
   streaming?: boolean;
   /** Reason the generation finished */
+  finishReason?: string;
+}
+
+/**
+ * LLM Step attributes - for a single LLM execution within a generation
+ */
+export interface LLMStepAttributes extends AIBaseAttributes {
+  /** Index of this step in the generation (0, 1, 2, ...) */
+  stepIndex?: number;
+  /** Input tokens used in this step */
+  inputTokens?: number;
+  /** Output tokens generated in this step */
+  outputTokens?: number;
+  /** Total tokens for this step */
+  totalTokens?: number;
+  /** Reason this step finished (stop, tool-calls, length, etc.) */
   finishReason?: string;
 }
 
@@ -262,6 +280,7 @@ export interface AISpanTypeMap {
   [AISpanType.AGENT_RUN]: AgentRunAttributes;
   [AISpanType.WORKFLOW_RUN]: WorkflowRunAttributes;
   [AISpanType.LLM_GENERATION]: LLMGenerationAttributes;
+  [AISpanType.LLM_STEP]: LLMStepAttributes;
   [AISpanType.LLM_CHUNK]: LLMChunkAttributes;
   [AISpanType.TOOL_CALL]: ToolCallAttributes;
   [AISpanType.MCP_TOOL_CALL]: MCPToolCallAttributes;
