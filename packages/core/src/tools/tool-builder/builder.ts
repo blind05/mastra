@@ -11,7 +11,7 @@ import {
 } from '@mastra/schema-compat';
 import type { ToolExecutionOptions } from 'ai';
 import { z } from 'zod';
-import { AISpanType, wrapMastra } from '../../ai-tracing';
+import { AISpanType, wrapMastra, type TracingContext } from '../../ai-tracing';
 import { MastraBase } from '../../base';
 import { ErrorCategory, MastraError, ErrorDomain } from '../../error';
 import { RuntimeContext } from '../../runtime-context';
@@ -126,8 +126,12 @@ export class CoreToolBuilder extends MastraBase {
     });
 
     const execFunction = async (args: unknown, execOptions: ToolInvocationOptions) => {
-      // Create tool span if we have an current span available
-      const toolSpan = options.tracingContext?.currentSpan?.createChildSpan({
+      // Use execution-time tracingContext if available (passed at runtime), otherwise fall back to build-time tracingContext
+      // We use 'as any' here because tracingContext is added at runtime and not in the official ToolInvocationOptions type
+      const tracingContext = (execOptions as any).tracingContext as TracingContext || options.tracingContext;
+
+      // Create tool span if we have a current span available
+      const toolSpan = tracingContext?.currentSpan?.createChildSpan({
         type: AISpanType.TOOL_CALL,
         name: `tool: '${options.name}'`,
         input: args,

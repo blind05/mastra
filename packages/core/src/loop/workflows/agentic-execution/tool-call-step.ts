@@ -19,6 +19,7 @@ export function createToolCallStep<
   controller,
   runId,
   streamState,
+  chunkSpanTracker,
 }: OuterLLMRun<Tools, OUTPUT>) {
   return createStep({
     id: 'toolCallStep',
@@ -144,6 +145,8 @@ export function createToolCallStep<
           toolCallId: inputData.toolCallId,
           messages: messageList.get.input.aiV5.model(),
           writableStream: writer,
+          // Pass current step span as parent for tool call spans
+          tracingContext: { currentSpan: chunkSpanTracker?.getCurrentStepSpan() },
           suspend: async (suspendPayload: any) => {
             controller.enqueue({
               type: 'tool-call-suspended',

@@ -1129,6 +1129,7 @@ describe('AI Tracing Integration Tests', () => {
 
         const agentRunSpans = testExporter.getSpansByType(AISpanType.AGENT_RUN);
         const llmGenerationSpans = testExporter.getSpansByType(AISpanType.LLM_GENERATION);
+        const llmStepSpans = testExporter.getSpansByType(AISpanType.LLM_STEP);
         const llmChunkSpans = testExporter.getSpansByType(AISpanType.LLM_CHUNK);
         const toolCallSpans = testExporter.getSpansByType(AISpanType.TOOL_CALL);
         const workflowSpans = testExporter.getSpansByType(AISpanType.WORKFLOW_RUN);
@@ -1144,10 +1145,11 @@ describe('AI Tracing Integration Tests', () => {
         // For legacy methods: no chunk tracking
         if (name.includes('Legacy')) {
           expect(llmChunkSpans.length).toBe(0);
+          expect(llmStepSpans.length).toBe(0); // no step tracking in legacy
         } else {
           // VNext tracks chunks - verify we have at least tool-call chunk
           expect(llmChunkSpans.length).toBeGreaterThan(0);
-          const toolCallChunk = llmChunkSpans.find(s => s.name === 'chunk: tool-call');
+          const toolCallChunk = llmChunkSpans.find(s => s.name === "chunk: 'tool-call'");
           expect(toolCallChunk).toBeDefined();
 
           // Verify tool-call chunk output structure
@@ -1167,7 +1169,14 @@ describe('AI Tracing Integration Tests', () => {
 
         // verify span nesting
         expect(llmGenerationSpan?.parentSpanId).toEqual(agentRunSpan?.id);
-        expect(toolCallSpan?.parentSpanId).toEqual(agentRunSpan?.id);
+        // LLM_STEP and LLM_CHUNK are NOT internal spans, so TOOL_CALL spans are children of LLM_STEP for VNext
+        if (name.includes('Legacy')) {
+          expect(toolCallSpan?.parentSpanId).toEqual(agentRunSpan?.id);
+        } else {
+          const llmStepSpan = llmStepSpans[0];
+          expect(llmStepSpan).toBeDefined();
+          expect(toolCallSpan?.parentSpanId).toEqual(llmStepSpan?.id);
+        }
 
         expect(llmGenerationSpan?.name).toBe("llm: 'mock-model-id'");
         expect(llmGenerationSpan?.input.messages).toHaveLength(2);
@@ -1235,7 +1244,7 @@ describe('AI Tracing Integration Tests', () => {
         } else {
           // VNext tracks chunks - verify we have at least tool-call chunk
           expect(llmChunkSpans.length).toBeGreaterThan(0);
-          const toolCallChunk = llmChunkSpans.find(s => s.name === 'chunk: tool-call');
+          const toolCallChunk = llmChunkSpans.find(s => s.name === "chunk: 'tool-call'");
           expect(toolCallChunk).toBeDefined();
 
           // Verify tool-call chunk output structure
@@ -1316,6 +1325,7 @@ describe('AI Tracing Integration Tests', () => {
 
         const agentRunSpans = testExporter.getSpansByType(AISpanType.AGENT_RUN);
         const llmGenerationSpans = testExporter.getSpansByType(AISpanType.LLM_GENERATION);
+        const llmStepSpans = testExporter.getSpansByType(AISpanType.LLM_STEP);
         const toolCallSpans = testExporter.getSpansByType(AISpanType.TOOL_CALL);
         const workflowSpans = testExporter.getSpansByType(AISpanType.WORKFLOW_RUN);
         const workflowSteps = testExporter.getSpansByType(AISpanType.WORKFLOW_STEP);
@@ -1334,7 +1344,14 @@ describe('AI Tracing Integration Tests', () => {
 
         // verify span nesting
         expect(llmGenerationSpan?.parentSpanId).toEqual(agentRunSpan?.id);
-        expect(toolCallSpan?.parentSpanId).toEqual(agentRunSpan?.id);
+        // LLM_STEP and LLM_CHUNK are NOT internal spans, so TOOL_CALL spans are children of LLM_STEP for VNext
+        if (name.includes('Legacy')) {
+          expect(toolCallSpan?.parentSpanId).toEqual(agentRunSpan?.id);
+        } else {
+          const llmStepSpan = llmStepSpans[0];
+          expect(llmStepSpan).toBeDefined();
+          expect(toolCallSpan?.parentSpanId).toEqual(llmStepSpan?.id);
+        }
 
         expect(llmGenerationSpan?.name).toBe("llm: 'mock-model-id'");
         expect(llmGenerationSpan?.input.messages).toHaveLength(2);
@@ -1404,7 +1421,7 @@ describe('AI Tracing Integration Tests', () => {
         //       - Internal processor agent LLM_GENERATION
 
         expect(agentRunSpans.length).toBe(2); // Test Agent + internal processor agent
-        expect(llmGenerationSpans.length).toBe(2); // Test Agent LLM + processor agent LLM
+        expect(llmGenerationSpans.length).toBe(2); // Test Agent Model + processor agent Model
         expect(processorRunSpans.length).toBe(1); // one processor run for structuredOutput
         expect(toolCallSpans.length).toBe(0); // no tools
         expect(workflowSpans.length).toBe(0); // no workflows
@@ -1420,7 +1437,7 @@ describe('AI Tracing Integration Tests', () => {
         const processorAgentSpan = agentRunSpans.find(span => span !== testAgentSpan);
         const processorRunSpan = processorRunSpans[0];
 
-        // Identify LLM generation spans
+        // Identify Model generation spans
         const testAgentLlmSpan = llmGenerationSpans.find(span => span.parentSpanId === testAgentSpan?.id);
         const processorAgentLlmSpan = llmGenerationSpans.find(span => span.parentSpanId === processorAgentSpan?.id);
 
@@ -1438,7 +1455,7 @@ describe('AI Tracing Integration Tests', () => {
         expect(processorAgentSpan?.parentSpanId).toEqual(processorRunSpan?.id);
         expect(processorAgentLlmSpan?.parentSpanId).toEqual(processorAgentSpan?.id);
 
-        // Verify LLM generation spans
+        // Verify Model generation spans
         expect(testAgentLlmSpan?.name).toBe("llm: 'mock-model-id'");
         expect(testAgentLlmSpan?.input.messages).toHaveLength(2);
         expect(testAgentLlmSpan?.output.text).toBe('Mock V2 streaming response');
@@ -1565,7 +1582,7 @@ describe('AI Tracing Integration Tests', () => {
         //       - summarizer-agent LLM_GENERATION
 
         expect(agentRunSpans.length).toBe(3); // Test Agent + validator agent + summarizer agent
-        expect(llmGenerationSpans.length).toBe(3); // Test Agent LLM + validator LLM + summarizer LLM
+        expect(llmGenerationSpans.length).toBe(3); // Test Agent Model + validator Model + summarizer Model
         expect(processorRunSpans.length).toBe(2); // validator + summarizer
 
         // Find specific spans
@@ -1735,7 +1752,7 @@ describe('AI Tracing Integration Tests', () => {
       const workflowStepSpans = testExporter.getSpansByType(AISpanType.WORKFLOW_STEP);
 
       expect(agentRunSpans.length).toBe(1); // One agent run
-      expect(llmGenerationSpans.length).toBe(1); // one llm_generation span per agent run
+      expect(llmGenerationSpans.length).toBe(1); // one LLM_GENERATION span per agent run
       expect(agentRunSpans[0]?.traceId).toBe(result.traceId);
       expect(toolCallSpans.length).toBe(1); // tool call (workflow is converted into a tool dynamically)
 
@@ -1929,7 +1946,7 @@ describe('AI Tracing Integration Tests', () => {
     const llmGenerationSpans = testExporter.getSpansByType(AISpanType.LLM_GENERATION);
 
     expect(agentRunSpans.length).toBe(1); // One agent run
-    expect(llmGenerationSpans.length).toBe(1); // One LLM generation
+    expect(llmGenerationSpans.length).toBe(1); // One Model generation
     expect(agentRunSpans[0]?.traceId).toBe(result.traceId);
 
     testExporter.finalExpectations();

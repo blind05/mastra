@@ -44,10 +44,8 @@ function isSpanInternal(spanType: AISpanType, flags?: InternalSpans): boolean {
     case AISpanType.MCP_TOOL_CALL:
       return (flags & InternalSpans.TOOL) !== 0;
 
-    // LLM-related spans
+    // LLM-related spans (LLM_STEP and LLM_CHUNK are not internal - they represent user-facing LLM events)
     case AISpanType.LLM_GENERATION:
-    case AISpanType.LLM_STEP:
-    case AISpanType.LLM_CHUNK:
       return (flags & InternalSpans.LLM) !== 0;
 
     // Default: never internal

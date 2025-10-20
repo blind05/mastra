@@ -1,8 +1,8 @@
 /**
- * LLM Model Span Tracing
+ * Model Model Span Tracing
  *
- * Provides span tracking for LLM generations, including:
- * - LLM_STEP spans (one per LLM API call)
+ * Provides span tracking for Model generations, including:
+ * - LLM_STEP spans (one per Model API call)
  * - LLM_CHUNK spans (individual streaming chunks within a step)
  *
  * Hierarchy: LLM_GENERATION -> LLM_STEP -> LLM_CHUNK
@@ -16,7 +16,7 @@ import type { AISpan } from './types';
 import type { ToolSet } from 'ai-v5';
 
 /**
- * Manages LLM_STEP and LLM_CHUNK span tracking for streaming LLM responses.
+ * Manages LLM_STEP and LLM_CHUNK span tracking for streaming Model responses.
  *
  * Should be instantiated once per LLM_GENERATION span and shared across
  * all streaming steps (including after tool calls).
@@ -34,11 +34,11 @@ export class ModelSpanTracker {
   }
 
   /**
-   * Start a new LLM execution step
+   * Start a new Model execution step
    */
   startStepSpan(payload?: StepStartPayload) {
     this.currentStepSpan = this.modelSpan?.createChildSpan({
-      name: `step ${this.stepIndex}`,
+      name: `step: ${this.stepIndex}`,
       type: AISpanType.LLM_STEP,
       attributes: {
         stepIndex: this.stepIndex,
@@ -52,7 +52,7 @@ export class ModelSpanTracker {
   }
 
   /**
-   * End the current LLM execution step with token usage, finish reason, output, and metadata
+   * End the current Model execution step with token usage, finish reason, output, and metadata
    */
   endStepSpan<OUTPUT extends OutputSchema>(payload: StepFinishPayload<ToolSet, OUTPUT>) {
     if (!this.currentStepSpan) return;
@@ -95,7 +95,7 @@ export class ModelSpanTracker {
     }
 
     this.currentChunkSpan = this.currentStepSpan?.createChildSpan({
-      name: `chunk: ${chunkType}`,
+      name: `chunk: '${chunkType}'`,
       type: AISpanType.LLM_CHUNK,
       attributes: {
         chunkType,
@@ -141,7 +141,7 @@ export class ModelSpanTracker {
     }
 
     const span = this.currentStepSpan?.createEventSpan({
-      name: `chunk: ${chunkType}`,
+      name: `chunk: '${chunkType}'`,
       type: AISpanType.LLM_CHUNK,
       attributes: {
         chunkType,
@@ -167,6 +167,13 @@ export class ModelSpanTracker {
    */
   getAccumulator(): Record<string, any> {
     return this.accumulator;
+  }
+
+  /**
+   * Get the current step span (for making tool calls children of steps)
+   */
+  getCurrentStepSpan(): AISpan<AISpanType.LLM_STEP> | undefined {
+    return this.currentStepSpan;
   }
 }
 
@@ -259,7 +266,7 @@ function handleObjectChunk<OUTPUT extends OutputSchema>(chunk: ChunkType<OUTPUT>
 }
 
 /**
- * Creates a transform stream that tracks LLM steps and chunks as spans.
+ * Creates a transform stream that tracks Model steps and chunks as spans.
  *
  * This should be added to the stream pipeline to automatically
  * create LLM_STEP and LLM_CHUNK spans for each semantic unit in the stream.
