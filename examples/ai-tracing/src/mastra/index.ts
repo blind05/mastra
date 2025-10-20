@@ -69,6 +69,9 @@ const storyAgent = new Agent({
   name: "story-agent",
   instructions: "Generate a short story using the provided tools. Use the random integer tool to determine how many characters to generate. Be lazy about generating character names, only generate them immediately before you use them.",
   model: "openai/gpt-5-nano",
+  defaultStreamOptions: {
+    maxSteps: 20,
+  },
   inputProcessors: [
     new UnicodeNormalizer({
       stripControlChars: true,
