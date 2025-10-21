@@ -83,11 +83,11 @@ memory.updateWorkingMemory()
 - Messages are saved after successful LLM response
 - Tool calls, tool results, and all other message types ARE persisted
 
-### New MessageHistoryProcessor Design
+### New MessageHistoryProcessor Design (✅ IMPLEMENTED)
 
-#### Input Processor: `MessageHistoryProcessor`
+#### Combined Input/Output Processor: `MessageHistoryProcessor`
 ```typescript
-class MessageHistoryProcessor implements InputProcessor {
+class MessageHistoryProcessor implements InputProcessor, OutputProcessor {
   constructor(options: {
     storage: MemoryStorage;
     threadId?: string;
@@ -96,43 +96,56 @@ class MessageHistoryProcessor implements InputProcessor {
     includeSystemMessages?: boolean;
   });
 
-  async processInput(messages: CoreMessage[]): Promise<CoreMessage[]> {
+  async processInput(args: {
+    messages: MastraMessageV2[];
+    abort: (reason?: string) => never;
+    tracingContext?: TracingContext;
+  }): Promise<MastraMessageV2[]> {
     // 1. Fetch historical messages from storage
     const historicalMessages = await this.storage.getMessages({
       threadId: this.threadId,
-      last: this.lastMessages
+      selectBy: { last: this.lastMessages },
+      format: 'v2'
     });
     
-    // 2. Convert to CoreMessage format
-    const coreMessages = historicalMessages.map(convertToCore);
+    // 2. Filter based on includeSystemMessages option
+    const filteredMessages = historicalMessages.filter(msg => 
+      this.includeSystemMessages || msg.role !== 'system'
+    );
     
-    // 3. Merge with incoming messages (avoiding duplicates)
-    return [...coreMessages, ...messages];
+    // 3. Merge with incoming messages (avoiding duplicates by ID)
+    return [...uniqueHistoricalMessages, ...messages];
   }
-}
-```
 
-#### Output Processor: `MessagePersistenceProcessor`
-```typescript
-class MessagePersistenceProcessor implements OutputProcessor {
-  constructor(options: {
-    storage: MemoryStorage;
-    threadId?: string;
-    resourceId?: string;
-  });
-
-  async processOutputResult(messages: CoreMessage[]): Promise<CoreMessage[]> {
+  async processOutputResult(args: {
+    messages: MastraMessageV2[];
+    abort: (reason?: string) => never;
+    tracingContext?: TracingContext;
+  }): Promise<MastraMessageV2[]> {
     // 1. Filter out ONLY system messages
     const messagesToSave = messages.filter(m => m.role !== 'system');
     
-    // 2. Save to storage (includes user, assistant, tool-call, tool-result, etc.)
-    await this.storage.saveMessages(messagesToSave);
+    // 2. Generate IDs if not provided
+    const messagesWithIds = messagesToSave.map(msg => ({
+      ...msg,
+      id: msg.id || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
     
-    // 3. Update thread metadata
+    // 3. Save to storage (includes user, assistant, tool-call, tool-result, etc.)
+    await this.storage.saveMessages({
+      messages: messagesWithIds,
+      format: 'v2'
+    });
+    
+    // 4. Update thread metadata
     await this.storage.updateThread({
       id: this.threadId,
-      updatedAt: new Date(),
-      messageCount: await this.storage.getMessageCount(this.threadId)
+      title: thread?.title || 'New Conversation',
+      metadata: {
+        updatedAt: new Date().toISOString(),
+        lastMessageAt: new Date().toISOString(),
+        messageCount: existingMessages.length
+      }
     });
     
     return messages;
@@ -275,23 +288,30 @@ new Agent({
 
 ### Testing Strategy for MessageHistory
 
-#### Unit Tests
+#### Unit Tests (✅ COMPLETED - 18 tests passing)
 ```typescript
 describe('MessageHistoryProcessor', () => {
+  // Input processing tests
   test('fetches last N messages from storage');
   test('merges historical messages with new messages');
   test('avoids duplicate message IDs');
   test('handles empty storage');
   test('respects includeSystemMessages flag');
   test('handles storage errors gracefully');
-});
-
-describe('MessagePersistenceProcessor', () => {
+  test('returns original messages when no threadId');
+  test('handles assistant messages with tool calls');
+  test('handles tool result messages');
+  
+  // Output processing tests
   test('saves user, assistant, tool-call, and tool-result messages');
   test('filters out ONLY system messages');
   test('updates thread metadata');
-  test('handles save failures');
-  test('handles streaming responses');
+  test('handles save failures gracefully');
+  test('handles thread update failures gracefully');
+  test('returns original messages when no threadId');
+  test('handles messages with only system messages');
+  test('generates message IDs if not provided');
+  test('preserves existing message IDs');
 });
 ```
 
