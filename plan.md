@@ -220,6 +220,16 @@ interface ProcessorProvider {
   getOutputProcessors?(): OutputProcessor[];
 }
 
+// TODO: for playground, we will need something like this
+// maybe playground is only for mastra memory to start?
+interface MemoryProcessorProvider {
+  getThread?()
+  getThreads?()
+  createThread?()
+  updateThread?()
+  deleteThread?()
+}
+
 // Agent constructor logic
 class Agent {
   constructor(options: AgentOptions) {
@@ -621,7 +631,7 @@ describe('SemanticRecall with other processors', () => {
       inputProcessors: [
         new PromptInjectionDetector({ strategy: 'block' }),
         memory,  // Memory implements ProcessorProvider
-      ]
+      ],
     });
     
     // Malicious prompt should be blocked BEFORE vector search
