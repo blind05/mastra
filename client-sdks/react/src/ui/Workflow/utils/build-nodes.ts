@@ -204,7 +204,7 @@ const buildEdge = ({ parentNode, node }: BuildEdgeArgs): Edge => {
       strokeWidth: status === 'success' ? 2 : undefined,
       strokeDasharray: status === 'success' ? undefined : '5 5',
     },
-    animated: true,
+    animated: status !== 'success',
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 12,

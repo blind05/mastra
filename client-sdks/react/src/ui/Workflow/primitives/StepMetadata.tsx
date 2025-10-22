@@ -28,8 +28,6 @@ export const StepMetadata = ({ type, className, children, ...props }: StepMetada
   if (!type) return <>{children}</>;
   const icon = StepMetadataIcons[type];
 
-  console.log('type', type);
-
   return (
     <div className={className || twMerge(StepMetadataClass, StepMetadataBackgrounds[type])} {...props}>
       <div className="mastra:flex mastra:gap-1 mastra:items-center mastra:text-surface2 mastra:font-mono mastra:absolute mastra:top-0 mastra:left-0 mastra:bg-accent6 mastra:rounded-t-md mastra:px-2 mastra:py-0.5 mastra:-translate-y-full mastra:text-[10px]">
