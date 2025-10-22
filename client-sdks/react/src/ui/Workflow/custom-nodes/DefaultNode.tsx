@@ -12,11 +12,10 @@ import { CodeBlock } from '@/ui/Code';
 
 export const DefaultNode = ({ data }: NodeProps<WorkflowNode>) => {
   const step = getNodeData(data.step);
-  const parentNodes = data.parentNodes;
   const stepRun = data.stepRun;
   const isSuspended = stepRun?.status === 'suspended';
-  const hasParent = Boolean(parentNodes && parentNodes?.length > 0);
-  const showParentHandleSuccess = parentNodes?.some(node => node.data.stepRun?.status === 'success');
+  const showParentHandle = data.showParentHandle;
+  const isParentStepSuccessful = data.isParentStepSuccessful;
 
   return (
     <StepMetadata type={data.type}>
@@ -53,7 +52,7 @@ export const DefaultNode = ({ data }: NodeProps<WorkflowNode>) => {
         {!data.isLastStep && (
           <StepHandle type="source" position={Position.Bottom} isFinished={stepRun?.status === 'success'} />
         )}
-        {hasParent && <StepHandle type="target" position={Position.Top} isFinished={showParentHandleSuccess} />}
+        {showParentHandle && <StepHandle type="target" position={Position.Top} isFinished={isParentStepSuccessful} />}
       </StepCard>
     </StepMetadata>
   );

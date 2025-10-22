@@ -10,6 +10,7 @@ export type WorkflowNode = Node<
     parentNodes?: WorkflowNode[];
 
     showParentHandle: boolean;
+    isParentStepSuccessful: boolean;
     isLastStep: boolean;
 
     type?: StepMetadataType;

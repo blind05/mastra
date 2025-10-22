@@ -32,6 +32,8 @@ const workflowStepToNode = ({
       parentNodes,
       type,
       nestedWorkflowNodes,
+      showParentHandle: Boolean(parentNodes && parentNodes?.length > 0),
+      isParentStepSuccessful: Boolean(parentNodes?.some(node => node.data.stepRun?.status === 'success')),
     },
     type: 'default',
   };
