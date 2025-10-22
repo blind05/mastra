@@ -1,7 +1,7 @@
-import type { Processor } from '../index.js';
-import type { MemoryStorage } from '../../storage/domains/memory/base.js';
 import type { MastraMessageV2 } from '../../agent/index.js';
 import type { TracingContext } from '../../ai-tracing/index.js';
+import type { MemoryStorage } from '../../storage/domains/memory/base.js';
+import type { Processor } from '../index.js';
 
 /**
  * Options for the MessageHistoryProcessor
@@ -78,7 +78,7 @@ export class MessageHistoryProcessor implements Processor {
     tracingContext?: TracingContext;
   }): Promise<MastraMessageV2[]> {
     const { messages } = args;
-    
+
     if (!this.threadId) {
       return messages;
     }
@@ -94,24 +94,24 @@ export class MessageHistoryProcessor implements Processor {
       // 2. Add IDs to messages that don't have them
       const messagesWithIds = messagesToSave.map(msg => ({
         ...msg,
-        id: msg.id || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        id: msg.id || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       }));
 
       // 3. Save to storage
-      await this.storage.saveMessages({ 
-        messages: messagesWithIds, 
-        format: 'v2' 
+      await this.storage.saveMessages({
+        messages: messagesWithIds,
+        format: 'v2',
       });
 
       // 4. Update thread metadata
       try {
         const thread = await this.storage.getThreadById({ threadId: this.threadId });
         if (thread) {
-          const allMessages = await this.storage.getMessages({ 
+          const allMessages = await this.storage.getMessages({
             threadId: this.threadId,
-            format: 'v2'
+            format: 'v2',
           });
-          
+
           await this.storage.updateThread({
             id: this.threadId,
             title: thread.title || '',
@@ -119,8 +119,8 @@ export class MessageHistoryProcessor implements Processor {
               ...thread.metadata,
               updatedAt: new Date(),
               lastMessageAt: new Date(),
-              messageCount: allMessages?.length || 0
-            }
+              messageCount: allMessages?.length || 0,
+            },
           });
         }
       } catch (updateError) {
@@ -136,4 +136,3 @@ export class MessageHistoryProcessor implements Processor {
     }
   }
 }
-

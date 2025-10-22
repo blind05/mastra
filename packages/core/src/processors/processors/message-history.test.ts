@@ -1,15 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MessageHistoryProcessor } from './message-history.js';
-import { MemoryStorage } from '../../storage/domains/memory/base.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { MastraMessageV2 } from '../../agent/index.js';
-import type { StorageThreadType } from '../../memory/types.js';
+import { MemoryStorage } from '../../storage/domains/memory/base.js';
+
+import { MessageHistoryProcessor } from './message-history.js';
 
 // Mock storage implementation
 class MockStorage extends MemoryStorage {
   private messages: MastraMessageV2[] = [];
 
   async getMessages(params: any): Promise<MastraMessageV2[]> {
-    const { threadId, selectBy, format } = params;
+    const { threadId, selectBy } = params;
     const threadMessages = this.messages.filter(m => m.threadId === threadId);
 
     if (selectBy?.last) {
@@ -24,10 +25,10 @@ class MockStorage extends MemoryStorage {
   }
 
   // Implement other required abstract methods with stubs
-  async getThreadById(args: { threadId: string }) {
+  async getThreadById(_args: { threadId: string }) {
     return null;
   }
-  async getThreadsByResourceId(args: { resourceId: string }) {
+  async getThreadsByResourceId(_args: { resourceId: string }) {
     return [];
   }
   async saveThread(args: any) {
@@ -43,8 +44,8 @@ class MockStorage extends MemoryStorage {
       updatedAt: new Date(),
     };
   }
-  async deleteThread(args: { threadId: string }) {}
-  async getMessagesById(args: { ids: string[] }) {
+  async deleteThread(_args: { threadId: string }) {}
+  async getMessagesById(_args: { ids: string[] }) {
     return [];
   }
   async saveMessages(args: { messages: MastraMessageV2[]; format: 'v2' }) {
@@ -53,11 +54,11 @@ class MockStorage extends MemoryStorage {
   async updateMessages(args: any) {
     return args.messages || [];
   }
-  async deleteMessages(args: { ids: string[] }) {}
-  async getThreadsByResourceIdPaginated(args: any) {
+  async deleteMessages(_args: { ids: string[] }) {}
+  async getThreadsByResourceIdPaginated(_args: any) {
     return { data: [], nextCursor: null };
   }
-  async getMessagesPaginated(args: any) {
+  async getMessagesPaginated(_args: any) {
     return { data: [], nextCursor: null };
   }
 }
@@ -438,10 +439,10 @@ describe('MessageHistoryProcessor', () => {
     it('should save user, assistant, and tool messages', async () => {
       const mockStorage = {
         saveMessages: vi.fn().mockResolvedValue(undefined),
-        getThreadById: vi.fn().mockResolvedValue({ 
-          id: 'thread-1', 
+        getThreadById: vi.fn().mockResolvedValue({
+          id: 'thread-1',
           title: 'Test Thread',
-          metadata: {} 
+          metadata: {},
         }),
         getMessages: vi.fn().mockResolvedValue([]),
         updateThread: vi.fn().mockResolvedValue(undefined),
@@ -449,25 +450,25 @@ describe('MessageHistoryProcessor', () => {
 
       const processor = new MessageHistoryProcessor({
         storage: mockStorage,
-        threadId: 'thread-1'
+        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [
         { role: 'system', content: 'You are a helpful assistant' },
         { role: 'user', content: 'Hello', id: 'msg-1' },
         { role: 'assistant', content: 'Hi there!', id: 'msg-2' },
-        { 
-          role: 'assistant', 
+        {
+          role: 'assistant',
           content: '',
           toolCalls: [{ id: 'tool-1', name: 'search', arguments: '{}' }],
-          id: 'msg-3'
+          id: 'msg-3',
         },
-        { role: 'tool', content: 'Tool result', toolCallId: 'tool-1', id: 'msg-4' }
+        { role: 'tool', content: 'Tool result', toolCallId: 'tool-1', id: 'msg-4' },
       ];
 
       const result = await processor.processOutputResult({
         messages,
-        abort: vi.fn()
+        abort: vi.fn(),
       });
 
       expect(result).toEqual(messages);
@@ -476,26 +477,24 @@ describe('MessageHistoryProcessor', () => {
           expect.objectContaining({ role: 'user', content: 'Hello' }),
           expect.objectContaining({ role: 'assistant', content: 'Hi there!' }),
           expect.objectContaining({ role: 'assistant', toolCalls: expect.any(Array) }),
-          expect.objectContaining({ role: 'tool', content: 'Tool result' })
+          expect.objectContaining({ role: 'tool', content: 'Tool result' }),
         ]),
-        format: 'v2'
+        format: 'v2',
       });
       // System message should NOT be saved
       expect(mockStorage.saveMessages).toHaveBeenCalledWith({
-        messages: expect.not.arrayContaining([
-          expect.objectContaining({ role: 'system' })
-        ]),
-        format: 'v2'
+        messages: expect.not.arrayContaining([expect.objectContaining({ role: 'system' })]),
+        format: 'v2',
       });
     });
 
     it('should filter out ONLY system messages', async () => {
       const mockStorage = {
         saveMessages: vi.fn().mockResolvedValue(undefined),
-        getThreadById: vi.fn().mockResolvedValue({ 
-          id: 'thread-1', 
+        getThreadById: vi.fn().mockResolvedValue({
+          id: 'thread-1',
           title: 'Test Thread',
-          metadata: {} 
+          metadata: {},
         }),
         getMessages: vi.fn().mockResolvedValue([]),
         updateThread: vi.fn().mockResolvedValue(undefined),
@@ -503,7 +502,7 @@ describe('MessageHistoryProcessor', () => {
 
       const processor = new MessageHistoryProcessor({
         storage: mockStorage,
-        threadId: 'thread-1'
+        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [
@@ -511,12 +510,12 @@ describe('MessageHistoryProcessor', () => {
         { role: 'user', content: 'User message' },
         { role: 'system', content: 'System prompt 2' },
         { role: 'assistant', content: 'Assistant response' },
-        { role: 'system', content: 'System prompt 3' }
+        { role: 'system', content: 'System prompt 3' },
       ];
 
       await processor.processOutputResult({
         messages,
-        abort: vi.fn()
+        abort: vi.fn(),
       });
 
       const savedMessages = (mockStorage.saveMessages as any).mock.calls[0][0].messages;
@@ -527,10 +526,10 @@ describe('MessageHistoryProcessor', () => {
     it('should update thread metadata', async () => {
       const mockStorage = {
         saveMessages: vi.fn().mockResolvedValue(undefined),
-        getThreadById: vi.fn().mockResolvedValue({ 
-          id: 'thread-1', 
+        getThreadById: vi.fn().mockResolvedValue({
+          id: 'thread-1',
           title: 'Test Thread',
-          metadata: { createdAt: new Date('2024-01-01') } 
+          metadata: { createdAt: new Date('2024-01-01') },
         }),
         getMessages: vi.fn().mockResolvedValue([{ role: 'user', content: 'existing' }]),
         updateThread: vi.fn().mockResolvedValue(undefined),
@@ -538,16 +537,14 @@ describe('MessageHistoryProcessor', () => {
 
       const processor = new MessageHistoryProcessor({
         storage: mockStorage,
-        threadId: 'thread-1'
+        threadId: 'thread-1',
       });
 
-      const messages: MastraMessageV2[] = [
-        { role: 'user', content: 'Hello' }
-      ];
+      const messages: MastraMessageV2[] = [{ role: 'user', content: 'Hello' }];
 
       await processor.processOutputResult({
         messages,
-        abort: vi.fn()
+        abort: vi.fn(),
       });
 
       expect(mockStorage.updateThread).toHaveBeenCalledWith({
@@ -557,8 +554,8 @@ describe('MessageHistoryProcessor', () => {
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
           lastMessageAt: expect.any(Date),
-          messageCount: 1
-        })
+          messageCount: 1,
+        }),
       });
     });
 
@@ -569,33 +566,31 @@ describe('MessageHistoryProcessor', () => {
 
       const processor = new MessageHistoryProcessor({
         storage: mockStorage,
-        threadId: 'thread-1'
+        threadId: 'thread-1',
       });
 
-      const messages: MastraMessageV2[] = [
-        { role: 'user', content: 'Hello' }
-      ];
+      const messages: MastraMessageV2[] = [{ role: 'user', content: 'Hello' }];
 
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      
+
       const result = await processor.processOutputResult({
         messages,
-        abort: vi.fn()
+        abort: vi.fn(),
       });
 
       expect(result).toEqual(messages);
       expect(consoleSpy).toHaveBeenCalledWith('Failed to save messages:', expect.any(Error));
-      
+
       consoleSpy.mockRestore();
     });
 
     it('should handle thread update failures gracefully', async () => {
       const mockStorage = {
         saveMessages: vi.fn().mockResolvedValue(undefined),
-        getThreadById: vi.fn().mockResolvedValue({ 
-          id: 'thread-1', 
+        getThreadById: vi.fn().mockResolvedValue({
+          id: 'thread-1',
           title: 'Test Thread',
-          metadata: {} 
+          metadata: {},
         }),
         getMessages: vi.fn().mockResolvedValue([]),
         updateThread: vi.fn().mockRejectedValue(new Error('Update failed')),
@@ -603,25 +598,23 @@ describe('MessageHistoryProcessor', () => {
 
       const processor = new MessageHistoryProcessor({
         storage: mockStorage,
-        threadId: 'thread-1'
+        threadId: 'thread-1',
       });
 
-      const messages: MastraMessageV2[] = [
-        { role: 'user', content: 'Hello' }
-      ];
+      const messages: MastraMessageV2[] = [{ role: 'user', content: 'Hello' }];
 
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      
+
       const result = await processor.processOutputResult({
         messages,
-        abort: vi.fn()
+        abort: vi.fn(),
       });
 
       // Should still save messages and return them
       expect(result).toEqual(messages);
       expect(mockStorage.saveMessages).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith('Failed to update thread metadata:', expect.any(Error));
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -631,17 +624,15 @@ describe('MessageHistoryProcessor', () => {
       } as unknown as MemoryStorage;
 
       const processor = new MessageHistoryProcessor({
-        storage: mockStorage
+        storage: mockStorage,
         // No threadId
       });
 
-      const messages: MastraMessageV2[] = [
-        { role: 'user', content: 'Hello' }
-      ];
+      const messages: MastraMessageV2[] = [{ role: 'user', content: 'Hello' }];
 
       const result = await processor.processOutputResult({
         messages,
-        abort: vi.fn()
+        abort: vi.fn(),
       });
 
       expect(result).toEqual(messages);
@@ -655,17 +646,17 @@ describe('MessageHistoryProcessor', () => {
 
       const processor = new MessageHistoryProcessor({
         storage: mockStorage,
-        threadId: 'thread-1'
+        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [
         { role: 'system', content: 'System message 1' },
-        { role: 'system', content: 'System message 2' }
+        { role: 'system', content: 'System message 2' },
       ];
 
       const result = await processor.processOutputResult({
         messages,
-        abort: vi.fn()
+        abort: vi.fn(),
       });
 
       expect(result).toEqual(messages);
@@ -675,10 +666,10 @@ describe('MessageHistoryProcessor', () => {
     it('should generate message IDs if not provided', async () => {
       const mockStorage = {
         saveMessages: vi.fn().mockResolvedValue(undefined),
-        getThreadById: vi.fn().mockResolvedValue({ 
-          id: 'thread-1', 
+        getThreadById: vi.fn().mockResolvedValue({
+          id: 'thread-1',
           title: 'Test Thread',
-          metadata: {} 
+          metadata: {},
         }),
         getMessages: vi.fn().mockResolvedValue([]),
         updateThread: vi.fn().mockResolvedValue(undefined),
@@ -686,16 +677,16 @@ describe('MessageHistoryProcessor', () => {
 
       const processor = new MessageHistoryProcessor({
         storage: mockStorage,
-        threadId: 'thread-1'
+        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [
-        { role: 'user', content: 'Hello' }  // No ID
+        { role: 'user', content: 'Hello' }, // No ID
       ];
 
       await processor.processOutputResult({
         messages,
-        abort: vi.fn()
+        abort: vi.fn(),
       });
 
       const savedMessages = (mockStorage.saveMessages as any).mock.calls[0][0].messages;
@@ -706,10 +697,10 @@ describe('MessageHistoryProcessor', () => {
     it('should preserve existing message IDs', async () => {
       const mockStorage = {
         saveMessages: vi.fn().mockResolvedValue(undefined),
-        getThreadById: vi.fn().mockResolvedValue({ 
-          id: 'thread-1', 
+        getThreadById: vi.fn().mockResolvedValue({
+          id: 'thread-1',
           title: 'Test Thread',
-          metadata: {} 
+          metadata: {},
         }),
         getMessages: vi.fn().mockResolvedValue([]),
         updateThread: vi.fn().mockResolvedValue(undefined),
@@ -717,16 +708,14 @@ describe('MessageHistoryProcessor', () => {
 
       const processor = new MessageHistoryProcessor({
         storage: mockStorage,
-        threadId: 'thread-1'
+        threadId: 'thread-1',
       });
 
-      const messages: MastraMessageV2[] = [
-        { role: 'user', content: 'Hello', id: 'existing-id-123' }
-      ];
+      const messages: MastraMessageV2[] = [{ role: 'user', content: 'Hello', id: 'existing-id-123' }];
 
       await processor.processOutputResult({
         messages,
-        abort: vi.fn()
+        abort: vi.fn(),
       });
 
       const savedMessages = (mockStorage.saveMessages as any).mock.calls[0][0].messages;
@@ -734,4 +723,3 @@ describe('MessageHistoryProcessor', () => {
     });
   });
 });
-
