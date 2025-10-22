@@ -1,6 +1,6 @@
 import { twMerge } from 'tailwind-merge';
 import { StepMetadataType } from '../types';
-import { Columns2, GitBranch } from 'lucide-react';
+import { Clock, Columns2, GitBranch, Infinity as InfinityIcon } from 'lucide-react';
 import { Icon } from '@/ui/Icon';
 
 export interface StepMetadataProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -10,17 +10,25 @@ export interface StepMetadataProps extends React.HTMLAttributes<HTMLDivElement> 
 export const StepMetadataBackgrounds: Record<StepMetadataType, string> = {
   conditional: 'mastra:bg-accent6',
   parallel: 'mastra:bg-accent6',
+  waitForEvent: 'mastra:bg-accent6',
+  loop: 'mastra:bg-accent6',
+  foreach: 'mastra:bg-accent6',
 };
 
 export const StepMetadataIcons: Record<StepMetadataType, React.ReactNode> = {
   conditional: <GitBranch />,
   parallel: <Columns2 />,
+  waitForEvent: <Clock />,
+  loop: <InfinityIcon />,
+  foreach: <InfinityIcon />,
 };
 
 export const StepMetadataClass = 'mastra:relative mastra:text-xs mastra:p-0.5 mastra:rounded-xl mastra:rounded-tl-none';
 export const StepMetadata = ({ type, className, children, ...props }: StepMetadataProps) => {
   if (!type) return <>{children}</>;
   const icon = StepMetadataIcons[type];
+
+  console.log('type', type);
 
   return (
     <div className={className || twMerge(StepMetadataClass, StepMetadataBackgrounds[type])} {...props}>

@@ -19,7 +19,7 @@ export type WorkflowNode = Node<
   'default' | 'group'
 >;
 
-export type StepMetadataType = 'conditional' | 'parallel';
+export type StepMetadataType = 'conditional' | 'parallel' | 'waitForEvent' | 'loop' | 'foreach';
 
 export type StepWithMetadata = SerializedStepFlowEntry & {
   condition?: string;

@@ -107,7 +107,9 @@ const createStepNode = ({
         hasChild,
         stepRun: workflowResult?.steps[adjustedId],
         parentNodes,
-        type,
+        type:
+          type ||
+          (['waitForEvent', 'loop', 'foreach'].includes(step.type) ? (step.type as StepMetadataType) : undefined),
         nestedWorkflowNodes: step.step.serializedStepFlow
           ? buildNodes(step.step.serializedStepFlow, workflowResult, adjustedParentId)
           : undefined,
