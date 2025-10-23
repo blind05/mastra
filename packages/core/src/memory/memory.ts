@@ -564,14 +564,32 @@ https://mastra.ai/en/docs/memory/overview`,
   getInputProcessors(): InputProcessor[] {
     const processors: InputProcessor[] = [];
 
-    // TODO: Add semantic recall processor when implemented
-    // if (this.threadConfig.semanticRecall && this.vector && this.embedder) {
-    //   processors.push(new SemanticRecallProcessor({
-    //     vector: this.vector,
-    //     embedder: this.embedder,
-    //     ...this.threadConfig.semanticRecall
-    //   }));
-    // }
+    // Add semantic recall processor if configured
+    if (this.threadConfig.semanticRecall && this.vector && this.embedder) {
+      if (!this.storage?.stores?.memory)
+        throw new MastraError({
+          category: 'USER',
+          domain: 'MASTRA_MEMORY',
+          id: 'SEMANTIC_RECALL_MISSING_STORAGE_ADAPTER',
+          text: 'Using Mastra Memory semantic recall requires a storage adapter but no attached adapter was detected.',
+        });
+
+      const semanticConfig =
+        typeof this.threadConfig.semanticRecall === 'boolean' ? {} : this.threadConfig.semanticRecall;
+
+      processors.push(
+        new SemanticRecall({
+          storage: this.storage.stores.memory,
+          vector: this.vector,
+          embedder: this.embedder,
+          topK: semanticConfig.topK,
+          messageRange: semanticConfig.messageRange,
+          scope: semanticConfig.scope,
+          threshold: semanticConfig.threshold,
+          indexName: semanticConfig.indexName,
+        }),
+      );
+    }
 
     // Add working memory input processor if configured
     if (this.threadConfig.workingMemory) {
