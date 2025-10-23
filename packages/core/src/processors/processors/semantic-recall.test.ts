@@ -244,10 +244,7 @@ describe('SemanticRecall', () => {
       expect(mockStorage.getMessages).toHaveBeenCalledWith(
         expect.objectContaining({
           selectBy: {
-            include: [
-              expect.objectContaining({ id: 'msg-1' }),
-              expect.objectContaining({ id: 'msg-3' }),
-            ],
+            include: [expect.objectContaining({ id: 'msg-1' }), expect.objectContaining({ id: 'msg-3' })],
           },
         }),
       );
@@ -588,9 +585,7 @@ describe('SemanticRecall', () => {
         { id: 'vec-1', score: 0.95, metadata: { message_id: 'msg-1', thread_id: 'thread-1' } },
       ]);
 
-      vi.mocked(mockStorage.getMessages).mockResolvedValue([
-        { id: 'msg-1', role: 'user', content: 'Message 1' },
-      ]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue([{ id: 'msg-1', role: 'user', content: 'Message 1' }]);
 
       await processor.processInput({
         messages: inputMessages,
