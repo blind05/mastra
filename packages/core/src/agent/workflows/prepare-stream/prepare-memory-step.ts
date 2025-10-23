@@ -167,18 +167,7 @@ export function createPrepareMemoryStep<
         resourceId,
       });
 
-      // Get working memory system message (if configured)
-      const memorySystemMessage = await memory.getSystemMessage({
-        threadId: threadObject.id,
-        resourceId,
-        memoryConfig,
-      });
-
-      if (memorySystemMessage) {
-        messageList.addSystem(memorySystemMessage, 'memory');
-      }
-
-      // Add user messages - memory processors will handle history/semantic recall
+      // Add user messages - memory processors will handle history/semantic recall/working memory
       messageList.add(options.messages, 'user');
 
       const { tripwireTriggered, tripwireReason } = await capabilities.runInputProcessors({
@@ -200,10 +189,7 @@ export function createPrepareMemoryStep<
       // Add instructions as system message(s)
       addSystemMessage(processedList, instructions);
 
-      processedList
-        .addSystem(memorySystemMessage)
-        .addSystem(systemMessages)
-        .add(options.context || [], 'context');
+      processedList.addSystem(systemMessages).add(options.context || [], 'context');
 
       // Add user-provided system message if present
       addSystemMessage(processedList, options.system, 'user-provided');

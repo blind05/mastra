@@ -573,13 +573,24 @@ https://mastra.ai/en/docs/memory/overview`,
     //   }));
     // }
 
-    // TODO: Add working memory input processor when implemented
-    // if (this.threadConfig.workingMemory) {
-    //   processors.push(new WorkingMemoryProcessor({
-    //     storage: this.storage.memory,
-    //     ...this.threadConfig.workingMemory
-    //   }));
-    // }
+    // Add working memory input processor if configured
+    if (this.threadConfig.workingMemory) {
+      if (!this.storage?.stores?.memory)
+        throw new MastraError({
+          category: 'USER',
+          domain: 'MASTRA_MEMORY',
+          id: 'WORKING_MEMORY_MISSING_STORAGE_ADAPTER',
+          text: 'Using Mastra Memory working memory requires a storage adapter but no attached adapter was detected.',
+        });
+      processors.push(
+        new WorkingMemory({
+          storage: this.storage.stores.memory,
+          template: this.threadConfig.workingMemory.template,
+          scope: this.threadConfig.workingMemory.scope,
+          useVNext: this.threadConfig.workingMemory.useVNext,
+        }),
+      );
+    }
 
     const lastMessages = this.threadConfig.lastMessages;
     if (lastMessages) {
