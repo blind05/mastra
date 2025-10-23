@@ -1,9 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MastraMessageV2 } from '../../agent/index.js';
+import type { MemoryRuntimeContext } from '../../memory/types.js';
+import { RuntimeContext } from '../../runtime-context/index.js';
 import { MemoryStorage } from '../../storage/domains/memory/base.js';
 
-import { MessageHistoryProcessor } from './message-history.js';
+import { MessageHistory } from './message-history.js';
+
+// Helper to create RuntimeContext with memory context
+function createRuntimeContextWithMemory(threadId: string, resourceId?: string): RuntimeContext {
+  const runtimeContext = new RuntimeContext();
+  const memoryContext: MemoryRuntimeContext = {
+    thread: { id: threadId },
+    resourceId,
+  };
+  runtimeContext.set('MastraMemory', memoryContext);
+  return runtimeContext;
+}
 
 // Mock storage implementation
 class MockStorage extends MemoryStorage {
@@ -63,9 +76,9 @@ class MockStorage extends MemoryStorage {
   }
 }
 
-describe('MessageHistoryProcessor', () => {
+describe('MessageHistory', () => {
   let mockStorage: MockStorage;
-  let processor: MessageHistoryProcessor;
+  let processor: MessageHistory;
   const mockAbort = vi.fn(() => {
     throw new Error('Aborted');
   }) as any;
@@ -103,9 +116,8 @@ describe('MessageHistoryProcessor', () => {
 
       mockStorage.setMessages(historicalMessages);
 
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
         lastMessages: 2,
       });
 
@@ -119,9 +131,12 @@ describe('MessageHistoryProcessor', () => {
         },
       ];
 
+      const runtimeContext = createRuntimeContextWithMemory('thread-1');
+
       const result = await processor.processInput({
         messages: newMessages,
         abort: mockAbort,
+        runtimeContext,
       });
 
       // Should have last 2 historical messages + 1 new message
@@ -144,9 +159,8 @@ describe('MessageHistoryProcessor', () => {
 
       mockStorage.setMessages(historicalMessages);
 
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const newMessages: MastraMessageV2[] = [
@@ -162,6 +176,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processInput({
         messages: newMessages,
         abort: mockAbort,
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result).toHaveLength(2);
@@ -189,9 +204,8 @@ describe('MessageHistoryProcessor', () => {
 
       mockStorage.setMessages(historicalMessages);
 
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const newMessages: MastraMessageV2[] = [
@@ -214,6 +228,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processInput({
         messages: newMessages,
         abort: mockAbort,
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       // msg-1 from history, msg-2 from new (duplicate filtered), msg-3 from new
@@ -225,9 +240,8 @@ describe('MessageHistoryProcessor', () => {
     });
 
     it('should handle empty storage', async () => {
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const newMessages: MastraMessageV2[] = [
@@ -243,6 +257,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processInput({
         messages: newMessages,
         abort: mockAbort,
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result).toHaveLength(1);
@@ -270,29 +285,29 @@ describe('MessageHistoryProcessor', () => {
       mockStorage.setMessages(historicalMessages);
 
       // Test with includeSystemMessages = false (default)
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const result1 = await processor.processInput({
         messages: [],
         abort: mockAbort,
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result1).toHaveLength(1);
       expect(result1[0].role).toBe('user');
 
       // Test with includeSystemMessages = true
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
         includeSystemMessages: true,
       });
 
       const result2 = await processor.processInput({
         messages: [],
         abort: mockAbort,
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result2).toHaveLength(2);
@@ -304,9 +319,8 @@ describe('MessageHistoryProcessor', () => {
       const errorStorage = new MockStorage();
       errorStorage.getMessages = vi.fn().mockRejectedValue(new Error('Storage error'));
 
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: errorStorage,
-        threadId: 'thread-1',
       });
 
       const newMessages: MastraMessageV2[] = [
@@ -323,6 +337,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processInput({
         messages: newMessages,
         abort: mockAbort,
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       // Should return original messages on error
@@ -333,7 +348,7 @@ describe('MessageHistoryProcessor', () => {
     });
 
     it('should return original messages when no threadId', async () => {
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: mockStorage,
         // No threadId
       });
@@ -351,6 +366,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processInput({
         messages: newMessages,
         abort: mockAbort,
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result).toEqual(newMessages);
@@ -380,14 +396,14 @@ describe('MessageHistoryProcessor', () => {
 
       mockStorage.setMessages(historicalMessages);
 
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const result = await processor.processInput({
         messages: [],
         abort: mockAbort,
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result).toHaveLength(1);
@@ -419,14 +435,14 @@ describe('MessageHistoryProcessor', () => {
 
       mockStorage.setMessages(historicalMessages);
 
-      processor = new MessageHistoryProcessor({
+      processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const result = await processor.processInput({
         messages: [],
         abort: mockAbort,
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result).toHaveLength(1);
@@ -448,9 +464,8 @@ describe('MessageHistoryProcessor', () => {
         updateThread: vi.fn().mockResolvedValue(undefined),
       } as unknown as MemoryStorage;
 
-      const processor = new MessageHistoryProcessor({
+      const processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [
@@ -469,6 +484,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processOutputResult({
         messages,
         abort: vi.fn(),
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result).toEqual(messages);
@@ -500,9 +516,8 @@ describe('MessageHistoryProcessor', () => {
         updateThread: vi.fn().mockResolvedValue(undefined),
       } as unknown as MemoryStorage;
 
-      const processor = new MessageHistoryProcessor({
+      const processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [
@@ -516,6 +531,7 @@ describe('MessageHistoryProcessor', () => {
       await processor.processOutputResult({
         messages,
         abort: vi.fn(),
+        runtimeContext: createRuntimeContextWithMemory('thread-1')
       });
 
       const savedMessages = (mockStorage.saveMessages as any).mock.calls[0][0].messages;
@@ -535,9 +551,8 @@ describe('MessageHistoryProcessor', () => {
         updateThread: vi.fn().mockResolvedValue(undefined),
       } as unknown as MemoryStorage;
 
-      const processor = new MessageHistoryProcessor({
+      const processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [{ role: 'user', content: 'Hello' }];
@@ -545,6 +560,7 @@ describe('MessageHistoryProcessor', () => {
       await processor.processOutputResult({
         messages,
         abort: vi.fn(),
+        runtimeContext: createRuntimeContextWithMemory('thread-1')
       });
 
       expect(mockStorage.updateThread).toHaveBeenCalledWith({
@@ -564,9 +580,8 @@ describe('MessageHistoryProcessor', () => {
         saveMessages: vi.fn().mockRejectedValue(new Error('Save failed')),
       } as unknown as MemoryStorage;
 
-      const processor = new MessageHistoryProcessor({
+      const processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [{ role: 'user', content: 'Hello' }];
@@ -576,6 +591,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processOutputResult({
         messages,
         abort: vi.fn(),
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result).toEqual(messages);
@@ -596,9 +612,8 @@ describe('MessageHistoryProcessor', () => {
         updateThread: vi.fn().mockRejectedValue(new Error('Update failed')),
       } as unknown as MemoryStorage;
 
-      const processor = new MessageHistoryProcessor({
+      const processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [{ role: 'user', content: 'Hello' }];
@@ -608,6 +623,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processOutputResult({
         messages,
         abort: vi.fn(),
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       // Should still save messages and return them
@@ -623,7 +639,7 @@ describe('MessageHistoryProcessor', () => {
         saveMessages: vi.fn(),
       } as unknown as MemoryStorage;
 
-      const processor = new MessageHistoryProcessor({
+      const processor = new MessageHistory({
         storage: mockStorage,
         // No threadId
       });
@@ -633,6 +649,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processOutputResult({
         messages,
         abort: vi.fn(),
+        // No runtimeContext, so no threadId
       });
 
       expect(result).toEqual(messages);
@@ -644,9 +661,8 @@ describe('MessageHistoryProcessor', () => {
         saveMessages: vi.fn(),
       } as unknown as MemoryStorage;
 
-      const processor = new MessageHistoryProcessor({
+      const processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [
@@ -657,6 +673,7 @@ describe('MessageHistoryProcessor', () => {
       const result = await processor.processOutputResult({
         messages,
         abort: vi.fn(),
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(result).toEqual(messages);
@@ -675,9 +692,8 @@ describe('MessageHistoryProcessor', () => {
         updateThread: vi.fn().mockResolvedValue(undefined),
       } as unknown as MemoryStorage;
 
-      const processor = new MessageHistoryProcessor({
+      const processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [
@@ -687,6 +703,7 @@ describe('MessageHistoryProcessor', () => {
       await processor.processOutputResult({
         messages,
         abort: vi.fn(),
+        runtimeContext: createRuntimeContextWithMemory('thread-1')
       });
 
       const savedMessages = (mockStorage.saveMessages as any).mock.calls[0][0].messages;
@@ -706,9 +723,8 @@ describe('MessageHistoryProcessor', () => {
         updateThread: vi.fn().mockResolvedValue(undefined),
       } as unknown as MemoryStorage;
 
-      const processor = new MessageHistoryProcessor({
+      const processor = new MessageHistory({
         storage: mockStorage,
-        threadId: 'thread-1',
       });
 
       const messages: MastraMessageV2[] = [{ role: 'user', content: 'Hello', id: 'existing-id-123' }];
@@ -716,6 +732,7 @@ describe('MessageHistoryProcessor', () => {
       await processor.processOutputResult({
         messages,
         abort: vi.fn(),
+        runtimeContext: createRuntimeContextWithMemory('thread-1')
       });
 
       const savedMessages = (mockStorage.saveMessages as any).mock.calls[0][0].messages;

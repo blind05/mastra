@@ -4,7 +4,7 @@ import type { AISpan, AISpanType } from '../../../ai-tracing';
 import { MastraError, ErrorDomain, ErrorCategory } from '../../../error';
 import type { SystemMessage } from '../../../llm';
 import type { MastraMemory } from '../../../memory/memory';
-import type { MemoryConfig, StorageThreadType } from '../../../memory/types';
+import type { MemoryConfig, MemoryRuntimeContext, StorageThreadType } from '../../../memory/types';
 import type { RuntimeContext } from '../../../runtime-context';
 import type { OutputSchema } from '../../../stream/base/schema';
 import { createStep } from '../../../workflows';
@@ -160,6 +160,12 @@ export function createPrepareMemoryStep<
           saveThread: false,
         });
       }
+
+      // Set memory context in RuntimeContext for processors to access
+      runtimeContext.set('MastraMemory', {
+        thread: threadObject,
+        resourceId,
+      });
 
       const config = memory.getMergedThreadConfig(memoryConfig || {});
       const hasResourceScopeSemanticRecall =

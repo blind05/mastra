@@ -3,6 +3,7 @@ import { TripWire } from '../agent/trip-wire';
 import { AISpanType } from '../ai-tracing';
 import type { AISpan, TracingContext } from '../ai-tracing';
 import type { IMastraLogger } from '../logger';
+import type { RuntimeContext } from '../runtime-context';
 import type { ChunkType, OutputSchema } from '../stream';
 import type { MastraModelOutput } from '../stream/base/output';
 import type { Processor } from './index';
@@ -84,16 +85,18 @@ export class ProcessorRunner {
     messageList: MessageList,
     tracingContext?: TracingContext,
     telemetry?: any,
+    runtimeContext?: RuntimeContext,
   ): Promise<MessageList> {
     const responseMessages = messageList.clear.response.v2();
 
     let processableMessages: MastraMessageV2[] = [...responseMessages];
 
-    const ctx: { messages: MastraMessageV2[]; abort: () => never } = {
+    const ctx: { messages: MastraMessageV2[]; abort: () => never; runtimeContext?: RuntimeContext } = {
       messages: processableMessages,
       abort: () => {
         throw new TripWire('Tripwire triggered');
       },
+      runtimeContext,
     };
 
     for (const [index, processor] of this.outputProcessors.entries()) {
@@ -129,6 +132,7 @@ export class ProcessorRunner {
           messages: processableMessages,
           abort: ctx.abort,
           tracingContext: { currentSpan: processorSpan },
+          runtimeContext: ctx.runtimeContext,
         });
       } else {
         await telemetry.traceMethod(
@@ -137,6 +141,7 @@ export class ProcessorRunner {
               messages: processableMessages,
               abort: ctx.abort,
               tracingContext: { currentSpan: processorSpan },
+              runtimeContext: ctx.runtimeContext,
             });
             return processableMessages;
           },
@@ -167,6 +172,7 @@ export class ProcessorRunner {
     part: ChunkType<OUTPUT>,
     processorStates: Map<string, ProcessorState<OUTPUT>>,
     tracingContext?: TracingContext,
+    runtimeContext?: RuntimeContext,
   ): Promise<{
     part: ChunkType<OUTPUT> | null | undefined;
     blocked: boolean;
@@ -205,6 +211,7 @@ export class ProcessorRunner {
                 throw new TripWire(reason || `Stream part blocked by ${processor.name}`);
               },
               tracingContext: { currentSpan: state.span },
+              runtimeContext,
             });
 
             if (state.span && !state.span.isEvent) {
@@ -260,6 +267,7 @@ export class ProcessorRunner {
   async runOutputProcessorsForStream<OUTPUT extends OutputSchema = undefined>(
     streamResult: MastraModelOutput<OUTPUT>,
     tracingContext?: TracingContext,
+    runtimeContext?: RuntimeContext,
   ): Promise<ReadableStream<any>> {
     return new ReadableStream({
       start: async controller => {
@@ -280,7 +288,7 @@ export class ProcessorRunner {
               part: processedPart,
               blocked,
               reason,
-            } = await this.processPart(value, processorStates, tracingContext);
+            } = await this.processPart(value, processorStates, tracingContext, runtimeContext);
 
             if (blocked) {
               // Log that part was blocked
@@ -313,16 +321,18 @@ export class ProcessorRunner {
     messageList: MessageList,
     tracingContext?: TracingContext,
     telemetry?: any,
+    runtimeContext?: RuntimeContext,
   ): Promise<MessageList> {
     const userMessages = messageList.clear.input.v2();
 
     let processableMessages: MastraMessageV2[] = [...userMessages];
 
-    const ctx: { messages: MastraMessageV2[]; abort: () => never } = {
+    const ctx: { messages: MastraMessageV2[]; abort: () => never; runtimeContext?: RuntimeContext } = {
       messages: processableMessages,
       abort: () => {
         throw new TripWire('Tripwire triggered');
       },
+      runtimeContext,
     };
 
     for (const [index, processor] of this.inputProcessors.entries()) {
@@ -358,6 +368,7 @@ export class ProcessorRunner {
           messages: processableMessages,
           abort: ctx.abort,
           tracingContext: { currentSpan: processorSpan },
+          runtimeContext: ctx.runtimeContext,
         });
       } else {
         await telemetry.traceMethod(
@@ -366,6 +377,7 @@ export class ProcessorRunner {
               messages: processableMessages,
               abort: ctx.abort,
               tracingContext: { currentSpan: processorSpan },
+              runtimeContext: ctx.runtimeContext,
             });
             return processableMessages;
           },

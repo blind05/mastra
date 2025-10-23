@@ -42,6 +42,15 @@ export type StorageThreadType = {
   metadata?: Record<string, unknown>;
 };
 
+/**
+ * Memory-specific context passed via RuntimeContext under the 'MastraMemory' key
+ * This provides processors with access to memory-related execution context
+ */
+export type MemoryRuntimeContext = {
+  thread?: Partial<StorageThreadType> & { id: string };
+  resourceId?: string;
+};
+
 export type MessageResponse<T extends 'raw' | 'core_message'> = {
   raw: MastraMessageV1[];
   core_message: CoreMessage[];

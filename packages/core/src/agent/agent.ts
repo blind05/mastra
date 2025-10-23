@@ -1531,12 +1531,12 @@ export class Agent<
       const tracedRunInputProcessors = (messageList: MessageList, tracingContext: TracingContext) => {
         const telemetry = this.#mastra?.getTelemetry();
         if (!telemetry) {
-          return runner.runInputProcessors(messageList, tracingContext, undefined);
+          return runner.runInputProcessors(messageList, tracingContext, undefined, runtimeContext);
         }
 
         return telemetry.traceMethod(
           async (data: { messageList: MessageList }) => {
-            return runner.runInputProcessors(data.messageList, tracingContext, telemetry);
+            return runner.runInputProcessors(data.messageList, tracingContext, telemetry, runtimeContext);
           },
           {
             spanName: `agent.${this.name}.inputProcessors`,
@@ -1608,12 +1608,12 @@ export class Agent<
       const tracedRunOutputProcessors = (messageList: MessageList, tracingContext: TracingContext) => {
         const telemetry = this.#mastra?.getTelemetry();
         if (!telemetry) {
-          return runner.runOutputProcessors(messageList, tracingContext, undefined);
+          return runner.runOutputProcessors(messageList, tracingContext, undefined, runtimeContext);
         }
 
         return telemetry.traceMethod(
           async (data: { messageList: MessageList }) => {
-            return runner.runOutputProcessors(data.messageList, tracingContext, telemetry);
+            return runner.runOutputProcessors(data.messageList, tracingContext, telemetry, runtimeContext);
           },
           {
             spanName: `agent.${this.name}.outputProcessors`,

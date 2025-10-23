@@ -5,6 +5,8 @@ import type { MastraMessageV2, UIMessageWithMetadata } from '../agent/message-li
 import { MastraBase } from '../base';
 import { ModelRouterEmbeddingModel } from '../llm/model/index.js';
 import type { Mastra } from '../mastra';
+import type { InputProcessor, OutputProcessor } from '../processors';
+import { MessageHistory } from '../processors/processors';
 import type { MastraStorage, PaginationInfo, StorageGetMessagesArg, ThreadSortOptions } from '../storage';
 import { augmentWithInit } from '../storage/storageWithInit';
 import type { ToolAction } from '../tools';
@@ -18,6 +20,7 @@ import type {
   MastraMessageV1,
   WorkingMemoryTemplate,
 } from './types';
+import { MastraError } from '../error';
 
 export type MemoryProcessorOpts = {
   systemMessage?: string;
@@ -94,14 +97,18 @@ export abstract class MastraMemory extends MastraBase {
     if (this.threadConfig.semanticRecall) {
       if (!config.vector) {
         throw new Error(
-          `Semantic recall requires a vector store to be configured.\n\nhttps://mastra.ai/en/docs/memory/semantic-recall`,
+          `Semantic recall requires a vector store to be configured.
+
+https://mastra.ai/en/docs/memory/semantic-recall`,
         );
       }
       this.vector = config.vector;
 
       if (!config.embedder) {
         throw new Error(
-          `Semantic recall requires an embedder to be configured.\n\nhttps://mastra.ai/en/docs/memory/semantic-recall`,
+          `Semantic recall requires an embedder to be configured.
+
+https://mastra.ai/en/docs/memory/semantic-recall`,
         );
       }
 
@@ -131,7 +138,9 @@ export abstract class MastraMemory extends MastraBase {
   get storage() {
     if (!this._storage) {
       throw new Error(
-        `Memory requires a storage provider to function. Add a storage configuration to Memory or to your Mastra instance.\n\nhttps://mastra.ai/en/docs/memory/overview`,
+        `Memory requires a storage provider to function. Add a storage configuration to Memory or to your Mastra instance.
+
+https://mastra.ai/en/docs/memory/overview`,
       );
     }
     return this._storage;
@@ -516,4 +525,86 @@ export abstract class MastraMemory extends MastraBase {
    * @returns Promise that resolves when all messages are deleted
    */
   abstract deleteMessages(messageIds: string[]): Promise<void>;
+
+  /**
+   * Get input processors for this memory instance.
+   * This allows Memory to be used as a ProcessorProvider in Agent's inputProcessors array.
+   * @param context - Optional execution context with threadId and resourceId
+   * @returns Array of input processors configured for this memory instance
+   */
+  getInputProcessors(): InputProcessor[] {
+    const processors: InputProcessor[] = [];
+
+    // TODO: Add semantic recall processor when implemented
+    // if (this.threadConfig.semanticRecall && this.vector && this.embedder) {
+    //   processors.push(new SemanticRecallProcessor({
+    //     vector: this.vector,
+    //     embedder: this.embedder,
+    //     ...this.threadConfig.semanticRecall
+    //   }));
+    // }
+
+    // TODO: Add working memory input processor when implemented
+    // if (this.threadConfig.workingMemory) {
+    //   processors.push(new WorkingMemoryProcessor({
+    //     storage: this.storage.memory,
+    //     ...this.threadConfig.workingMemory
+    //   }));
+    // }
+
+    const lastMessages = this.threadConfig.lastMessages;
+    if (lastMessages) {
+      if (!this.storage?.stores?.memory)
+        throw new MastraError({
+          category: 'USER',
+          domain: 'MASTRA_MEMORY',
+          id: 'MESSAGE_HISTORY_MISSING_STORAGE_ADAPTER',
+          text: 'Using Mastra Memory message history requires a storage adapter but no attached adapter was detected.',
+        });
+      processors.push(
+        new MessageHistory({
+          storage: this.storage.stores.memory,
+          lastMessages: typeof lastMessages === 'number' ? lastMessages : undefined,
+        }),
+      );
+    }
+
+    return processors;
+  }
+
+  /**
+   * Get output processors for this memory instance
+   * This allows Memory to be used as a ProcessorProvider in Agent's outputProcessors array.
+   * @returns Array of output processors configured for this memory instance
+   */
+  getOutputProcessors(): OutputProcessor[] {
+    const processors: OutputProcessor[] = [];
+
+    const lastMessages = this.threadConfig.lastMessages;
+    if (lastMessages) {
+      if (!this.storage?.stores?.memory)
+        throw new MastraError({
+          category: 'USER',
+          domain: 'MASTRA_MEMORY',
+          id: 'MESSAGE_HISTORY_MISSING_STORAGE_ADAPTER',
+          text: 'Using Mastra Memory message history requires a storage adapter but no attached adapter was detected.',
+        });
+      processors.push(
+        new MessageHistory({
+          storage: this.storage.stores.memory,
+          lastMessages: typeof lastMessages === 'number' ? lastMessages : undefined,
+        }),
+      );
+    }
+
+    // TODO: Add working memory output processor when implemented
+    // if (this.threadConfig.workingMemory) {
+    //   processors.push(new WorkingMemoryProcessor({
+    //     storage: this.storage.memory,
+    //     ...this.threadConfig.workingMemory
+    //   }));
+    // }
+
+    return processors;
+  }
 }

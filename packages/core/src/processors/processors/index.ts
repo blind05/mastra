@@ -35,4 +35,4 @@ export {
   type SystemPromptDetectionResult,
   type SystemPromptDetection,
 } from './system-prompt-scrubber';
-export { MessageHistoryProcessor, type MessageHistoryProcessorOptions } from './message-history';
+export { MessageHistory, type MessageHistoryOptions } from './message-history';

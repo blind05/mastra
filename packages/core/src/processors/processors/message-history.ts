@@ -1,15 +1,15 @@
 import type { MastraMessageV2 } from '../../agent/index.js';
 import type { TracingContext } from '../../ai-tracing/index.js';
+import type { MemoryRuntimeContext } from '../../memory/types.js';
+import type { RuntimeContext } from '../../runtime-context/index.js';
 import type { MemoryStorage } from '../../storage/domains/memory/base.js';
 import type { Processor } from '../index.js';
 
 /**
- * Options for the MessageHistoryProcessor
+ * Options for the MessageHistory processor
  */
-export interface MessageHistoryProcessorOptions {
+export interface MessageHistoryOptions {
   storage: MemoryStorage;
-  threadId?: string;
-  resourceId?: string;
   lastMessages?: number;
   includeSystemMessages?: boolean;
 }
@@ -18,20 +18,18 @@ export interface MessageHistoryProcessorOptions {
  * Hybrid processor that handles both retrieval and persistence of message history.
  * - On input: Fetches historical messages from storage and prepends them
  * - On output: Persists new messages to storage (excluding system messages)
- * This replaces the memory logic previously in prepare-memory-step.ts
+ * 
+ * This processor retrieves threadId and resourceId from RuntimeContext at execution time,
+ * making it decoupled from memory-specific context.
  */
-export class MessageHistoryProcessor implements Processor {
-  readonly name = 'MessageHistoryProcessor';
+export class MessageHistory implements Processor {
+  readonly name = 'MessageHistory';
   private storage: MemoryStorage;
-  private threadId?: string;
-  private resourceId?: string;
   private lastMessages?: number;
   private includeSystemMessages: boolean;
 
-  constructor(options: MessageHistoryProcessorOptions) {
+  constructor(options: MessageHistoryOptions) {
     this.storage = options.storage;
-    this.threadId = options.threadId;
-    this.resourceId = options.resourceId;
     this.lastMessages = options.lastMessages;
     this.includeSystemMessages = options.includeSystemMessages ?? false;
   }
@@ -40,17 +38,22 @@ export class MessageHistoryProcessor implements Processor {
     messages: MastraMessageV2[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
+    runtimeContext?: RuntimeContext;
   }): Promise<MastraMessageV2[]> {
     const { messages } = args;
 
-    if (!this.threadId) {
+    // Get memory context from RuntimeContext
+    const memoryContext = args.runtimeContext?.get('MastraMemory') as MemoryRuntimeContext | undefined;
+    const threadId = memoryContext?.thread?.id;
+
+    if (!threadId) {
       return messages;
     }
 
     try {
       // 1. Fetch historical messages from storage (as V2 format)
       const historicalMessages = await this.storage.getMessages({
-        threadId: this.threadId,
+        threadId,
         selectBy: {
           last: this.lastMessages,
         },
@@ -76,10 +79,15 @@ export class MessageHistoryProcessor implements Processor {
     messages: MastraMessageV2[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
+    runtimeContext?: RuntimeContext;
   }): Promise<MastraMessageV2[]> {
     const { messages } = args;
 
-    if (!this.threadId) {
+    // Get memory context from RuntimeContext
+    const memoryContext = args.runtimeContext?.get('MastraMemory') as MemoryRuntimeContext | undefined;
+    const threadId = memoryContext?.thread?.id;
+
+    if (!threadId) {
       return messages;
     }
 
@@ -105,15 +113,15 @@ export class MessageHistoryProcessor implements Processor {
 
       // 4. Update thread metadata
       try {
-        const thread = await this.storage.getThreadById({ threadId: this.threadId });
+        const thread = await this.storage.getThreadById({ threadId });
         if (thread) {
           const allMessages = await this.storage.getMessages({
-            threadId: this.threadId,
+            threadId,
             format: 'v2',
           });
 
           await this.storage.updateThread({
-            id: this.threadId,
+            id: threadId,
             title: thread.title || '',
             metadata: {
               ...thread.metadata,
