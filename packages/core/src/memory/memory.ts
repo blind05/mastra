@@ -88,7 +88,36 @@ export abstract class MastraMemory extends MastraBase {
     super({ component: 'MEMORY', name: config.name });
 
     if (config.options) this.threadConfig = this.getMergedThreadConfig(config.options);
-    if (config.processors) this.processors = config.processors;
+
+    // DEPRECATION: Block old processors config
+    if (config.processors) {
+      throw new Error(
+        `The 'processors' option in Memory is deprecated and has been removed.
+      
+Please use the new Input/Output processor system instead:
+
+OLD (deprecated):
+  new Memory({
+    processors: [new TokenLimiter(100000)]
+  })
+
+NEW (use this):
+  new Agent({
+    memory,
+    outputProcessors: [
+      new TokenLimiterProcessor(100000)
+    ]
+  })
+
+Or pass memory directly to processor arrays:
+  new Agent({
+    inputProcessors: [memory],
+    outputProcessors: [memory]
+  })
+
+See: https://mastra.ai/en/docs/memory/processors`,
+      );
+    }
     if (config.storage) {
       this._storage = augmentWithInit(config.storage);
       this._hasOwnStorage = true;

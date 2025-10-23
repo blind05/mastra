@@ -392,16 +392,23 @@ export type SharedMemoryConfig = {
   embedder?: EmbeddingModelId | EmbeddingModel<string> | EmbeddingModelV2<string>;
 
   /**
-   * Memory processors that modify retrieved messages before sending to the LLM.
-   * Useful for managing context size, filtering content, and preventing token limit errors.
-   * Processors execute in order, with TokenLimiter typically placed last.
+   * @deprecated This option is deprecated and will throw an error if used.
+   * Use the new Input/Output processor system instead.
+   *
+   * See: https://mastra.ai/en/docs/memory/processors
    *
    * @example
    * ```typescript
-   * processors: [
-   *   new CustomMemoryProcessor(),
-   *   new TokenLimiter(127000)
-   * ]
+   * // OLD (throws error):
+   * new Memory({
+   *   processors: [new TokenLimiter(100000)]
+   * })
+   *
+   * // NEW (use this):
+   * new Agent({
+   *   memory,
+   *   outputProcessors: [new TokenLimiterProcessor(100000)]
+   * })
    * ```
    */
   processors?: MemoryProcessor[];
