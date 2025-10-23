@@ -3,6 +3,7 @@ import type { AssistantContent, UserContent, CoreMessage, EmbeddingModel } from 
 import { MessageList } from '../agent/message-list';
 import type { MastraMessageV2, UIMessageWithMetadata } from '../agent/message-list';
 import { MastraBase } from '../base';
+import { MastraError } from '../error';
 import { ModelRouterEmbeddingModel } from '../llm/model/index.js';
 import type { Mastra } from '../mastra';
 import type { InputProcessor, OutputProcessor } from '../processors';
@@ -20,7 +21,6 @@ import type {
   MastraMessageV1,
   WorkingMemoryTemplate,
 } from './types';
-import { MastraError } from '../error';
 
 export type MemoryProcessorOpts = {
   systemMessage?: string;

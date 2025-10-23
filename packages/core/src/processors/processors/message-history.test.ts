@@ -531,7 +531,7 @@ describe('MessageHistory', () => {
       await processor.processOutputResult({
         messages,
         abort: vi.fn(),
-        runtimeContext: createRuntimeContextWithMemory('thread-1')
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       const savedMessages = (mockStorage.saveMessages as any).mock.calls[0][0].messages;
@@ -560,7 +560,7 @@ describe('MessageHistory', () => {
       await processor.processOutputResult({
         messages,
         abort: vi.fn(),
-        runtimeContext: createRuntimeContextWithMemory('thread-1')
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       expect(mockStorage.updateThread).toHaveBeenCalledWith({
@@ -703,7 +703,7 @@ describe('MessageHistory', () => {
       await processor.processOutputResult({
         messages,
         abort: vi.fn(),
-        runtimeContext: createRuntimeContextWithMemory('thread-1')
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       const savedMessages = (mockStorage.saveMessages as any).mock.calls[0][0].messages;
@@ -732,7 +732,7 @@ describe('MessageHistory', () => {
       await processor.processOutputResult({
         messages,
         abort: vi.fn(),
-        runtimeContext: createRuntimeContextWithMemory('thread-1')
+        runtimeContext: createRuntimeContextWithMemory('thread-1'),
       });
 
       const savedMessages = (mockStorage.saveMessages as any).mock.calls[0][0].messages;

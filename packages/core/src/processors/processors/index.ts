@@ -36,3 +36,5 @@ export {
   type SystemPromptDetection,
 } from './system-prompt-scrubber';
 export { MessageHistory, type MessageHistoryOptions } from './message-history';
+export { SemanticRecall, type SemanticRecallOptions } from './semantic-recall';
+export { WorkingMemory, type WorkingMemoryConfig, type WorkingMemoryTemplate } from './working-memory';

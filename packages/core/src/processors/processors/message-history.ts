@@ -18,7 +18,7 @@ export interface MessageHistoryOptions {
  * Hybrid processor that handles both retrieval and persistence of message history.
  * - On input: Fetches historical messages from storage and prepends them
  * - On output: Persists new messages to storage (excluding system messages)
- * 
+ *
  * This processor retrieves threadId and resourceId from RuntimeContext at execution time,
  * making it decoupled from memory-specific context.
  */
