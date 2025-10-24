@@ -1,8 +1,8 @@
-import type { MemoryRuntimeContext } from '../../memory/types';
-import type { MastraMessageV2 } from '../../message';
+import { parseMemoryRuntimeContext } from '../../memory/types';
+import type { MastraMessageV2 } from '../../memory/types';
 import type { RuntimeContext } from '../../runtime-context';
-import type { MemoryStorage } from '../../storage';
-import type { InputProcessor } from '../types';
+import type { MemoryStorage } from '../../storage/domains/memory/base';
+import type { InputProcessor } from '../index';
 
 export interface WorkingMemoryTemplate {
   format: 'markdown' | 'json';
@@ -27,6 +27,8 @@ export interface WorkingMemoryConfig {
  * not through this processor. The tool is provided by the Memory class.
  */
 export class WorkingMemory implements InputProcessor {
+  name = 'WorkingMemory';
+
   private defaultWorkingMemoryTemplate = `# Working Memory
 
 ## User Information
@@ -56,7 +58,7 @@ export class WorkingMemory implements InputProcessor {
     const { messages, runtimeContext } = args;
 
     // Get threadId and resourceId from runtime context
-    const memoryContext = runtimeContext?.get<MemoryRuntimeContext>('MastraMemory');
+    const memoryContext = parseMemoryRuntimeContext(runtimeContext);
     const threadId = memoryContext?.thread?.id;
     const resourceId = memoryContext?.resourceId;
 
@@ -74,11 +76,11 @@ export class WorkingMemory implements InputProcessor {
 
       if (scope === 'thread' && threadId) {
         // Get thread-scoped working memory
-        const thread = await this.options.storage.getThreadById({ id: threadId });
-        workingMemoryData = thread?.workingMemory || null;
+        const thread = await this.options.storage.getThreadById({ threadId });
+        workingMemoryData = (thread?.metadata?.workingMemory as string) || null;
       } else if (scope === 'resource' && resourceId) {
         // Get resource-scoped working memory
-        const resource = await this.options.storage.getResourceById({ id: resourceId });
+        const resource = await this.options.storage.getResourceById({ resourceId });
         workingMemoryData = resource?.workingMemory || null;
       }
 
@@ -97,7 +99,11 @@ export class WorkingMemory implements InputProcessor {
       const workingMemoryMessage: MastraMessageV2 = {
         id: `working-memory-${Date.now()}`,
         role: 'system',
-        content: instruction,
+        content: {
+          format: 2,
+          content: instruction,
+          parts: [],
+        },
         createdAt: new Date(),
       };
 

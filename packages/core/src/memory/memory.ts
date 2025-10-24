@@ -7,7 +7,7 @@ import { MastraError } from '../error';
 import { ModelRouterEmbeddingModel } from '../llm/model/index.js';
 import type { Mastra } from '../mastra';
 import type { InputProcessor, OutputProcessor } from '../processors';
-import { MessageHistory } from '../processors/processors';
+import { MessageHistory, SemanticRecall, WorkingMemory } from '../processors/processors';
 import type { MastraStorage, PaginationInfo, StorageGetMessagesArg, ThreadSortOptions } from '../storage';
 import { augmentWithInit } from '../storage/storageWithInit';
 import type { ToolAction } from '../tools';
@@ -575,7 +575,15 @@ https://mastra.ai/en/docs/memory/overview`,
         });
 
       const semanticConfig =
-        typeof this.threadConfig.semanticRecall === 'boolean' ? {} : this.threadConfig.semanticRecall;
+        typeof this.threadConfig.semanticRecall === 'boolean'
+          ? {
+              topK: undefined,
+              messageRange: undefined,
+              scope: undefined,
+              threshold: undefined,
+              indexName: undefined,
+            }
+          : this.threadConfig.semanticRecall;
 
       processors.push(
         new SemanticRecall({
@@ -600,12 +608,22 @@ https://mastra.ai/en/docs/memory/overview`,
           id: 'WORKING_MEMORY_MISSING_STORAGE_ADAPTER',
           text: 'Using Mastra Memory working memory requires a storage adapter but no attached adapter was detected.',
         });
+
+      // Convert string template to WorkingMemoryTemplate format
+      let template: { format: 'markdown' | 'json'; content: string } | undefined;
+      if (this.threadConfig.workingMemory.template) {
+        template = {
+          format: 'markdown',
+          content: this.threadConfig.workingMemory.template,
+        };
+      }
+
       processors.push(
         new WorkingMemory({
           storage: this.storage.stores.memory,
-          template: this.threadConfig.workingMemory.template,
+          template,
           scope: this.threadConfig.workingMemory.scope,
-          useVNext: this.threadConfig.workingMemory.useVNext,
+          useVNext: 'version' in this.threadConfig.workingMemory && this.threadConfig.workingMemory.version === 'vnext',
         }),
       );
     }

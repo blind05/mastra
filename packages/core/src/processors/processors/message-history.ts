@@ -1,6 +1,6 @@
 import type { MastraMessageV2 } from '../../agent/index.js';
 import type { TracingContext } from '../../ai-tracing/index.js';
-import type { MemoryRuntimeContext } from '../../memory/types.js';
+import { parseMemoryRuntimeContext } from '../../memory/types.js';
 import type { RuntimeContext } from '../../runtime-context/index.js';
 import type { MemoryStorage } from '../../storage/domains/memory/base.js';
 import type { Processor } from '../index.js';
@@ -43,7 +43,7 @@ export class MessageHistory implements Processor {
     const { messages } = args;
 
     // Get memory context from RuntimeContext
-    const memoryContext = args.runtimeContext?.get('MastraMemory') as MemoryRuntimeContext | undefined;
+    const memoryContext = parseMemoryRuntimeContext(args.runtimeContext);
     const threadId = memoryContext?.thread?.id;
 
     if (!threadId) {
@@ -84,7 +84,7 @@ export class MessageHistory implements Processor {
     const { messages } = args;
 
     // Get memory context from RuntimeContext
-    const memoryContext = args.runtimeContext?.get('MastraMemory') as MemoryRuntimeContext | undefined;
+    const memoryContext = parseMemoryRuntimeContext(args.runtimeContext);
     const threadId = memoryContext?.thread?.id;
 
     if (!threadId) {

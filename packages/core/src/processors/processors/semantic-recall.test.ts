@@ -29,8 +29,8 @@ describe('SemanticRecall', () => {
 
     // Mock embedder
     mockEmbedder = {
-      embed: vi.fn(),
-      model: 'text-embedding-3-small',
+      doEmbed: vi.fn(),
+      modelId: 'text-embedding-3-small',
     } as any;
 
     // Setup runtime context with memory data
@@ -54,7 +54,7 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'How do I use the API?',
+          content: { format: 2, content: 'How do I use the API?', parts: [] },
         },
       ];
 
@@ -62,17 +62,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-1',
           role: 'user',
-          content: 'API documentation needed',
+          content: { format: 2, content: 'API documentation needed', parts: [] },
         },
         {
           id: 'msg-2',
           role: 'assistant',
-          content: 'Here is the API guide...',
+          content: { format: 2, content: 'Here is the API guide...', parts: [] },
         },
       ];
 
       // Mock embedder
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -110,7 +110,7 @@ describe('SemanticRecall', () => {
       expect(result[2].id).toBe('msg-new');
 
       // Verify embedder was called with user query
-      expect(mockEmbedder.embed).toHaveBeenCalledWith({
+      expect(mockEmbedder.doEmbed).toHaveBeenCalledWith({
         values: ['How do I use the API?'],
       });
 
@@ -158,11 +158,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -206,11 +212,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -262,11 +274,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -303,11 +321,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -343,11 +367,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -382,11 +412,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -418,7 +454,13 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-1',
           role: 'assistant',
-          content: 'Hello!',
+          content: {
+            format: 2,
+
+            content: 'Hello!',
+
+            parts: [],
+          },
         },
       ];
 
@@ -432,7 +474,7 @@ describe('SemanticRecall', () => {
       expect(result).toEqual(inputMessages);
 
       // No embedder or vector calls should be made
-      expect(mockEmbedder.embed).not.toHaveBeenCalled();
+      expect(mockEmbedder.doEmbed).not.toHaveBeenCalled();
       expect(mockVector.query).not.toHaveBeenCalled();
     });
 
@@ -447,7 +489,13 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
@@ -464,7 +512,7 @@ describe('SemanticRecall', () => {
       expect(result).toEqual(inputMessages);
 
       // No embedder or vector calls should be made
-      expect(mockEmbedder.embed).not.toHaveBeenCalled();
+      expect(mockEmbedder.doEmbed).not.toHaveBeenCalled();
       expect(mockVector.query).not.toHaveBeenCalled();
     });
 
@@ -479,14 +527,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: [
-            { type: 'text', text: 'Part 1' },
-            { type: 'text', text: 'Part 2' },
-          ],
+          content: {
+            format: 2,
+            parts: [
+              { type: 'text', text: 'Part 1' },
+              { type: 'text', text: 'Part 2' },
+            ],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -503,7 +554,7 @@ describe('SemanticRecall', () => {
       });
 
       // Should combine text parts
-      expect(mockEmbedder.embed).toHaveBeenCalledWith({
+      expect(mockEmbedder.doEmbed).toHaveBeenCalledWith({
         values: ['Part 1 Part 2'],
       });
     });
@@ -519,16 +570,28 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-1',
           role: 'user',
-          content: 'Existing message',
+          content: {
+            format: 2,
+
+            content: 'Existing message',
+
+            parts: [],
+          },
         },
         {
           id: 'msg-new',
           role: 'user',
-          content: 'New query',
+          content: {
+            format: 2,
+
+            content: 'New query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -542,8 +605,8 @@ describe('SemanticRecall', () => {
       ]);
 
       vi.mocked(mockStorage.getMessages).mockResolvedValue([
-        { id: 'msg-1', role: 'user', content: 'Existing message' },
-        { id: 'msg-2', role: 'assistant', content: 'Similar message' },
+        { id: 'msg-1', role: 'user', content: { format: 2, content: 'Existing message', parts: [] } },
+        { id: 'msg-2', role: 'assistant', content: { format: 2, content: 'Similar message', parts: [] } },
       ]);
 
       const result = await processor.processInput({
@@ -569,11 +632,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -621,11 +690,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -642,7 +717,7 @@ describe('SemanticRecall', () => {
 
       // Verify index was created
       expect(mockVector.createIndex).toHaveBeenCalledWith({
-        name: 'mastra-memory-text-embedding-3-small',
+        indexName: 'mastra-memory-text-embedding-3-small',
         dimension: 3,
         metric: 'cosine',
       });
@@ -660,11 +735,17 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -697,14 +778,26 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'What did we discuss before?',
+          content: {
+            format: 2,
+
+            content: 'What did we discuss before?',
+
+            parts: [],
+          },
         },
       ];
 
       const crossThreadMessage1: MastraMessageV2 = {
         id: 'msg-other-1',
         role: 'user',
-        content: 'Previous question',
+        content: {
+          format: 2,
+
+          content: 'Previous question',
+
+          parts: [],
+        },
         threadId: 'other-thread-1',
         createdAt: '2024-01-15T10:30:00.000Z',
       };
@@ -712,7 +805,13 @@ describe('SemanticRecall', () => {
       const crossThreadMessage2: MastraMessageV2 = {
         id: 'msg-other-2',
         role: 'assistant',
-        content: 'Previous answer',
+        content: {
+          format: 2,
+
+          content: 'Previous answer',
+
+          parts: [],
+        },
         threadId: 'other-thread-1',
         createdAt: '2024-01-15T10:31:00.000Z',
       };
@@ -720,12 +819,18 @@ describe('SemanticRecall', () => {
       const sameThreadMessage: MastraMessageV2 = {
         id: 'msg-same',
         role: 'user',
-        content: 'Same thread message',
+        content: {
+          format: 2,
+
+          content: 'Same thread message',
+
+          parts: [],
+        },
         threadId: 'thread-1', // Same as current thread in runtimeContext
         createdAt: '2024-01-15T11:00:00.000Z',
       };
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 
@@ -753,11 +858,11 @@ describe('SemanticRecall', () => {
 
       // First message should be the formatted cross-thread system message
       expect(result[0]!.role).toBe('system');
-      expect(result[0]!.content).toContain('<remembered_from_other_conversation>');
-      expect(result[0]!.content).toContain('Previous question');
-      expect(result[0]!.content).toContain('Previous answer');
-      expect(result[0]!.content).toContain('User:');
-      expect(result[0]!.content).toContain('Assistant:');
+      expect(result[0]!.content.content).toContain('<remembered_from_other_conversation>');
+      expect(result[0]!.content.content).toContain('Previous question');
+      expect(result[0]!.content.content).toContain('Previous answer');
+      expect(result[0]!.content.content).toContain('User:');
+      expect(result[0]!.content.content).toContain('Assistant:');
 
       // Second message should be the same-thread message
       expect(result[1]).toEqual(sameThreadMessage);
@@ -778,19 +883,31 @@ describe('SemanticRecall', () => {
         {
           id: 'msg-new',
           role: 'user',
-          content: 'Test query',
+          content: {
+            format: 2,
+
+            content: 'Test query',
+
+            parts: [],
+          },
         },
       ];
 
       const similarMessage: MastraMessageV2 = {
         id: 'msg-similar',
         role: 'user',
-        content: 'Similar message',
+        content: {
+          format: 2,
+
+          content: 'Similar message',
+
+          parts: [],
+        },
         threadId: 'thread-123',
         createdAt: '2024-01-15T10:00:00.000Z',
       };
 
-      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+      vi.mocked(mockEmbedder.doEmbed).mockResolvedValue({
         embeddings: [[0.1, 0.2, 0.3]],
       });
 

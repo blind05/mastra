@@ -1,12 +1,11 @@
 import type { CoreMessage } from 'ai';
 
-import type { Embedder } from '../../embeddings';
-import type { MemoryRuntimeContext } from '../../memory/types';
-import type { MastraMessageV2 } from '../../message';
+import type { TracingContext } from '../../ai-tracing/types';
+import { parseMemoryRuntimeContext } from '../../memory/types';
+import type { MastraMessageV2 } from '../../memory/types';
 import type { RuntimeContext } from '../../runtime-context';
 import type { MemoryStorage } from '../../storage/domains/memory/base';
-import type { TracingContext } from '../../tracing';
-import type { VectorStore } from '../../vector';
+import type { MastraEmbeddingModel, MastraVector } from '../../vector';
 import type { InputProcessor } from '../index';
 
 const DEFAULT_TOP_K = 5;
@@ -21,12 +20,12 @@ export interface SemanticRecallOptions {
   /**
    * Vector store for semantic search
    */
-  vector: VectorStore;
+  vector: MastraVector;
 
   /**
    * Embedder for generating query embeddings
    */
-  embedder: Embedder;
+  embedder: MastraEmbeddingModel<string>;
 
   /**
    * Number of most similar messages to retrieve
@@ -90,8 +89,8 @@ export class SemanticRecall implements InputProcessor {
   readonly name = 'SemanticRecall';
 
   private storage: MemoryStorage;
-  private vector: VectorStore;
-  private embedder: Embedder;
+  private vector: MastraVector;
+  private embedder: MastraEmbeddingModel<string>;
   private topK: number;
   private messageRange: { before: number; after: number };
   private scope: 'thread' | 'resource';
@@ -132,7 +131,7 @@ export class SemanticRecall implements InputProcessor {
     const { messages, runtimeContext } = args;
 
     // Get memory context from RuntimeContext
-    const memoryContext = runtimeContext?.get<MemoryRuntimeContext>('MastraMemory');
+    const memoryContext = parseMemoryRuntimeContext(runtimeContext);
     if (!memoryContext) {
       // No memory context available, return messages unchanged
       return messages;
@@ -239,8 +238,12 @@ ${formattedSections.join('\n\n')}
     return {
       id: `cross-thread-context-${Date.now()}`,
       role: 'system',
-      content: formattedContent,
-      createdAt: new Date().toISOString(),
+      content: {
+        format: 2,
+        content: formattedContent,
+        parts: [],
+      },
+      createdAt: new Date(),
     };
   }
 
@@ -251,14 +254,26 @@ ${formattedSections.join('\n\n')}
     // Find the last user message
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
+      if (!msg) continue;
+
       if (msg.role === 'user') {
-        // Extract text content from the message
-        if (typeof msg.content === 'string') {
-          return msg.content;
-        } else if (Array.isArray(msg.content)) {
-          // Handle multi-part content
-          const textParts = msg.content.filter(part => part.type === 'text').map(part => part.text);
-          return textParts.join(' ');
+        // Extract text content from MastraMessageV2
+        // First check if there's a content string
+        if (typeof msg.content.content === 'string' && msg.content.content !== '') {
+          return msg.content.content;
+        }
+
+        // Otherwise extract from parts - combine all text parts
+        const textParts: string[] = [];
+        msg.content.parts?.forEach((part: any) => {
+          if (part.type === 'text' && part.text) {
+            textParts.push(part.text);
+          }
+        });
+        const textContent = textParts.join(' ');
+
+        if (textContent) {
+          return textContent;
         }
       }
     }
@@ -335,7 +350,7 @@ ${formattedSections.join('\n\n')}
     embeddings: number[][];
     dimension: number;
   }> {
-    const result = await this.embedder.embed({
+    const result = await this.embedder.doEmbed({
       values: [content],
     });
 
@@ -349,7 +364,7 @@ ${formattedSections.join('\n\n')}
    * Get default index name based on embedder model
    */
   private getDefaultIndexName(): string {
-    const model = this.embedder.model || 'default';
+    const model = this.embedder.modelId || 'default';
     return `mastra-memory-${model}`;
   }
 
@@ -360,12 +375,12 @@ ${formattedSections.join('\n\n')}
     try {
       // Check if index exists
       const indexes = await this.vector.listIndexes();
-      const indexExists = indexes.some(idx => idx.name === indexName);
+      const indexExists = indexes.includes(indexName);
 
       if (!indexExists) {
         // Create index if it doesn't exist
         await this.vector.createIndex({
-          name: indexName,
+          indexName,
           dimension,
           metric: 'cosine',
         });
@@ -386,7 +401,7 @@ ${formattedSections.join('\n\n')}
 
     if (Array.isArray(message.content)) {
       return message.content
-        .map(part => {
+        .map((part: Extract<CoreMessage['content'], Array<any>>[number]) => {
           if (part.type === 'text') {
             return part.text;
           }

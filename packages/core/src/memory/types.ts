@@ -1,11 +1,12 @@
 import type { EmbeddingModelV2 } from '@ai-sdk/provider-v5';
 import type { AssistantContent, CoreMessage, EmbeddingModel, ToolContent, UserContent } from 'ai';
 import type { JSONSchema7 } from 'json-schema';
+import type { ZodObject } from 'zod';
 
 export type { MastraMessageV2 } from '../agent';
-import type { ZodObject } from 'zod';
 import type { EmbeddingModelId } from '../llm/model/index.js';
 import type { MastraLanguageModel } from '../llm/model/shared.types';
+import type { RuntimeContext } from '../runtime-context';
 import type { MastraStorage } from '../storage';
 import type { DynamicArgument } from '../types';
 import type { MastraVector } from '../vector';
@@ -50,6 +51,48 @@ export type MemoryRuntimeContext = {
   thread?: Partial<StorageThreadType> & { id: string };
   resourceId?: string;
 };
+
+/**
+ * Parse and validate memory runtime context from RuntimeContext
+ * @param runtimeContext - The RuntimeContext to extract memory context from
+ * @returns The validated MemoryRuntimeContext or null if not available
+ * @throws Error if the context exists but is malformed
+ */
+export function parseMemoryRuntimeContext(runtimeContext?: RuntimeContext): MemoryRuntimeContext | null {
+  if (!runtimeContext) {
+    return null;
+  }
+
+  const memoryContext = runtimeContext.get('MastraMemory');
+  if (!memoryContext) {
+    return null;
+  }
+
+  // Validate the structure
+  if (typeof memoryContext !== 'object' || memoryContext === null) {
+    throw new Error(`Invalid MemoryRuntimeContext: expected object, got ${typeof memoryContext}`);
+  }
+
+  const ctx = memoryContext as Record<string, unknown>;
+
+  // Validate thread if present
+  if (ctx.thread !== undefined) {
+    if (typeof ctx.thread !== 'object' || ctx.thread === null) {
+      throw new Error(`Invalid MemoryRuntimeContext.thread: expected object, got ${typeof ctx.thread}`);
+    }
+    const thread = ctx.thread as Record<string, unknown>;
+    if (typeof thread.id !== 'string') {
+      throw new Error(`Invalid MemoryRuntimeContext.thread.id: expected string, got ${typeof thread.id}`);
+    }
+  }
+
+  // Validate resourceId if present
+  if (ctx.resourceId !== undefined && typeof ctx.resourceId !== 'string') {
+    throw new Error(`Invalid MemoryRuntimeContext.resourceId: expected string, got ${typeof ctx.resourceId}`);
+  }
+
+  return memoryContext as MemoryRuntimeContext;
+}
 
 export type MessageResponse<T extends 'raw' | 'core_message'> = {
   raw: MastraMessageV1[];
@@ -229,6 +272,28 @@ export type SemanticRecall = {
    * ```
    */
   indexConfig?: VectorIndexConfig;
+
+  /**
+   * Minimum similarity score threshold (0-1).
+   * Messages below this threshold will be filtered out from semantic search results.
+   *
+   * @example
+   * ```typescript
+   * threshold: 0.7 // Only include messages with 70%+ similarity
+   * ```
+   */
+  threshold?: number;
+
+  /**
+   * Index name for the vector store.
+   * If not provided, will be auto-generated based on embedder model.
+   *
+   * @example
+   * ```typescript
+   * indexName: 'my-custom-index'
+   * ```
+   */
+  indexName?: string;
 };
 
 /**

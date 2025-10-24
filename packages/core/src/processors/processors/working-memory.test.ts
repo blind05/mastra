@@ -40,7 +40,9 @@ describe('WorkingMemory', () => {
         id: threadId,
         resourceId: 'resource-1',
         title: 'Test Thread',
-        workingMemory: workingMemoryData,
+        metadata: {
+          workingMemory: workingMemoryData,
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -64,10 +66,10 @@ describe('WorkingMemory', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].role).toBe('system');
-      expect(result[0].content).toContain('WORKING_MEMORY_SYSTEM_INSTRUCTION');
-      expect(result[0].content).toContain(workingMemoryData);
+      expect(result[0].content.content).toContain('WORKING_MEMORY_SYSTEM_INSTRUCTION');
+      expect(result[0].content.content).toContain(workingMemoryData);
       expect(result[1]).toEqual(messages[0]);
-      expect(mockStorage.getThreadById).toHaveBeenCalledWith({ id: threadId });
+      expect(mockStorage.getThreadById).toHaveBeenCalledWith({ threadId });
     });
 
     it('should inject resource-scoped working memory as system message', async () => {
@@ -111,9 +113,9 @@ describe('WorkingMemory', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].role).toBe('system');
-      expect(result[0].content).toContain('WORKING_MEMORY_SYSTEM_INSTRUCTION');
-      expect(result[0].content).toContain(workingMemoryData);
-      expect(mockStorage.getResourceById).toHaveBeenCalledWith({ id: resourceId });
+      expect(result[0].content.content).toContain('WORKING_MEMORY_SYSTEM_INSTRUCTION');
+      expect(result[0].content.content).toContain(workingMemoryData);
+      expect(mockStorage.getResourceById).toHaveBeenCalledWith({ resourceId });
     });
 
     it('should use default template when no working memory exists', async () => {
@@ -133,7 +135,9 @@ describe('WorkingMemory', () => {
         id: threadId,
         resourceId: 'resource-1',
         title: 'Test Thread',
-        workingMemory: null,
+        metadata: {
+          workingMemory: null,
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -157,9 +161,9 @@ describe('WorkingMemory', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].role).toBe('system');
-      expect(result[0].content).toContain('WORKING_MEMORY_SYSTEM_INSTRUCTION');
-      expect(result[0].content).toContain('# Working Memory');
-      expect(result[0].content).toContain('## User Information');
+      expect(result[0].content.content).toContain('WORKING_MEMORY_SYSTEM_INSTRUCTION');
+      expect(result[0].content.content).toContain('# Working Memory');
+      expect(result[0].content.content).toContain('## User Information');
     });
 
     it('should use custom template when provided', async () => {
@@ -185,7 +189,9 @@ describe('WorkingMemory', () => {
         id: threadId,
         resourceId: 'resource-1',
         title: 'Test Thread',
-        workingMemory: null,
+        metadata: {
+          workingMemory: null,
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -207,8 +213,8 @@ describe('WorkingMemory', () => {
         runtimeContext,
       });
 
-      expect(result[0].content).toContain('# Custom Template');
-      expect(result[0].content).toContain('- Field 1:');
+      expect(result[0].content.content).toContain('# Custom Template');
+      expect(result[0].content.content).toContain('- Field 1:');
     });
 
     it('should use VNext instruction format when useVNext is true', async () => {
@@ -229,7 +235,9 @@ describe('WorkingMemory', () => {
         id: threadId,
         resourceId: 'resource-1',
         title: 'Test Thread',
-        workingMemory: 'Some data',
+        metadata: {
+          workingMemory: 'Some data',
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -251,8 +259,8 @@ describe('WorkingMemory', () => {
         runtimeContext,
       });
 
-      expect(result[0].content).toContain('If your memory has not changed');
-      expect(result[0].content).toContain('Information not being relevant to the current conversation');
+      expect(result[0].content.content).toContain('If your memory has not changed');
+      expect(result[0].content.content).toContain('Information not being relevant to the current conversation');
     });
 
     it('should return original messages when no threadId or resourceId', async () => {
@@ -336,7 +344,9 @@ describe('WorkingMemory', () => {
         id: threadId,
         resourceId: 'resource-1',
         title: 'Test Thread',
-        workingMemory: 'Test data',
+        metadata: {
+          workingMemory: 'Test data',
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -359,7 +369,7 @@ describe('WorkingMemory', () => {
       });
 
       expect(result).toHaveLength(2);
-      expect(mockStorage.getThreadById).toHaveBeenCalledWith({ id: threadId });
+      expect(mockStorage.getThreadById).toHaveBeenCalledWith({ threadId });
       expect(mockStorage.getResourceById).not.toHaveBeenCalled();
     });
 
@@ -389,7 +399,9 @@ describe('WorkingMemory', () => {
         id: threadId,
         resourceId: 'resource-1',
         title: 'Test Thread',
-        workingMemory: null,
+        metadata: {
+          workingMemory: null,
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -411,8 +423,8 @@ describe('WorkingMemory', () => {
         runtimeContext,
       });
 
-      expect(result[0].content).toContain('Use JSON format for all data');
-      expect(result[0].content).not.toContain('IMPORTANT: When calling updateWorkingMemory');
+      expect(result[0].content.content).toContain('Use JSON format for all data');
+      expect(result[0].content.content).not.toContain('IMPORTANT: When calling updateWorkingMemory');
     });
 
     it('should prepend working memory before existing messages', async () => {
@@ -432,7 +444,9 @@ describe('WorkingMemory', () => {
         id: threadId,
         resourceId: 'resource-1',
         title: 'Test Thread',
-        workingMemory: 'Test data',
+        metadata: {
+          workingMemory: 'Test data',
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -507,8 +521,8 @@ describe('WorkingMemory', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].role).toBe('system');
-      expect(result[0].content).toContain('<working_memory_data>');
-      expect(result[0].content).toContain('</working_memory_data>');
+      expect(result[0].content.content).toContain('<working_memory_data>');
+      expect(result[0].content.content).toContain('</working_memory_data>');
     });
   });
 });
