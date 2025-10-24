@@ -4,7 +4,6 @@ import { join, posix } from 'path';
 import devcert from '@expo/devcert';
 import { FileService } from '@mastra/deployer';
 import { getServerOptions } from '@mastra/deployer/build';
-import { isWebContainer } from '@webcontainer/env';
 import { execa } from 'execa';
 import getPort from 'get-port';
 

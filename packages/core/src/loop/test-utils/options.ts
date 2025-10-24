@@ -2768,7 +2768,6 @@ export function optionsTests({ loopFn, runId }: { loopFn: typeof loop; runId: st
     //     });
     //   });
 
-
     //   it('should have correct ui message stream', async () => {
     //     expect(await convertReadableStreamToArray(result.toUIMessageStream())).toMatchInlineSnapshot(`
     //         [
@@ -4871,7 +4870,6 @@ export function optionsTests({ loopFn, runId }: { loopFn: typeof loop; runId: st
   //           }
   //         `);
   //       });
-
 
   //       it('it should send transformed chunks to onChunk', async () => {
   //         const result: Array<

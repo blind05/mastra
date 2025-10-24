@@ -149,19 +149,19 @@ export class OpenAIVoice extends MastraVoice {
 
     const { speaker, responseFormat, speed, ...otherOptions } = options || {};
 
-      const response = await this.speechClient!.audio.speech.create({
-        model: this.speechModel?.name ?? 'tts-1',
-        voice: (speaker ?? this.speaker) as OpenAIVoiceId,
-        response_format: responseFormat ?? 'mp3',
-        input,
-        speed: speed || 1.0,
-        ...otherOptions,
-      });
+    const response = await this.speechClient!.audio.speech.create({
+      model: this.speechModel?.name ?? 'tts-1',
+      voice: (speaker ?? this.speaker) as OpenAIVoiceId,
+      response_format: responseFormat ?? 'mp3',
+      input,
+      speed: speed || 1.0,
+      ...otherOptions,
+    });
 
-      const passThrough = new PassThrough();
-      const buffer = Buffer.from(await response.arrayBuffer());
-      passThrough.end(buffer);
-      return passThrough;
+    const passThrough = new PassThrough();
+    const buffer = Buffer.from(await response.arrayBuffer());
+    passThrough.end(buffer);
+    return passThrough;
   }
 
   /**
@@ -207,15 +207,15 @@ export class OpenAIVoice extends MastraVoice {
     }
     const audioBuffer = Buffer.concat(chunks);
 
-      const { filetype, ...otherOptions } = options || {};
-      const file = new File([audioBuffer], `audio.${filetype || 'mp3'}`);
+    const { filetype, ...otherOptions } = options || {};
+    const file = new File([audioBuffer], `audio.${filetype || 'mp3'}`);
 
-      const response = await this.listeningClient!.audio.transcriptions.create({
-        model: this.listeningModel?.name || 'whisper-1',
-        file: file as any,
-        ...otherOptions,
-      });
+    const response = await this.listeningClient!.audio.transcriptions.create({
+      model: this.listeningModel?.name || 'whisper-1',
+      file: file as any,
+      ...otherOptions,
+    });
 
-      return response.text;
+    return response.text;
   }
 }

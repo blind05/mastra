@@ -169,7 +169,6 @@ export class MSSQLStore extends MastraStorage {
     return this.stores.legacyEvals.getEvals(options);
   }
 
-
   async createTable({
     tableName,
     schema,

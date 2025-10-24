@@ -48,7 +48,6 @@ export const getModelOutputForTripwire = async <
     },
   });
 
-
   const modelOutput = new MastraModelOutput<OUTPUT>({
     model: {
       modelId: model.modelId,

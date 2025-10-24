@@ -435,7 +435,6 @@ export class Mastra<
       storage = augmentWithInit(storage);
     }
 
-
     /*
     AI Tracing
     */
@@ -449,14 +448,13 @@ export class Mastra<
     */
     this.#storage = storage;
 
-
     /*
     Vectors
     */
     if (config?.vectors) {
       let vectors: Record<string, MastraVector> = {};
       Object.entries(config.vectors).forEach(([key, vector]) => {
-          vectors[key] = vector;
+        vectors[key] = vector;
       });
       this.#vectors = vectors as TVectors;
     }
@@ -1381,7 +1379,6 @@ do:
   public getLogger() {
     return this.#logger;
   }
-
 
   /**
    * Gets the currently configured memory instance.

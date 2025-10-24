@@ -3102,7 +3102,6 @@ export class Agent<
     const instructions = args.instructions || (await this.getInstructions({ runtimeContext }));
     const llm = await this.getLLM({ runtimeContext });
 
-
     const memory = await this.getMemory({ runtimeContext });
     const saveQueueManager = new SaveQueueManager({
       logger: this.logger,

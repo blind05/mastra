@@ -91,7 +91,6 @@ export function workflowLoopStream<
         },
       };
 
-
       if (!resumeContext) {
         controller.enqueue({
           type: 'start',

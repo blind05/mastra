@@ -50,7 +50,7 @@ export class CouchbaseVector extends MastraVector {
         username,
         password,
         configProfile: 'wanDevelopment',
-      });;
+      });
       this.cluster = null as unknown as Cluster;
       this.bucketName = bucketName;
       this.collectionName = collectionName;

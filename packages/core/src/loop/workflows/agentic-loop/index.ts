@@ -19,18 +19,8 @@ interface AgenticLoopParams<Tools extends ToolSet = ToolSet, OUTPUT extends Outp
 export function createAgenticLoopWorkflow<Tools extends ToolSet = ToolSet, OUTPUT extends OutputSchema = undefined>(
   params: AgenticLoopParams<Tools, OUTPUT>,
 ) {
-  const {
-    models,
-    _internal,
-    messageId,
-    runId,
-    toolChoice,
-    messageList,
-    modelSettings,
-    controller,
-    writer,
-    ...rest
-  } = params;
+  const { models, _internal, messageId, runId, toolChoice, messageList, modelSettings, controller, writer, ...rest } =
+    params;
 
   // Track accumulated steps across iterations to pass to stopWhen
   const accumulatedSteps: StepResult<Tools>[] = [];

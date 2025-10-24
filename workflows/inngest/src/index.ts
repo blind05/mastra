@@ -1781,7 +1781,7 @@ export class InngestExecutionEngine extends DefaultExecutionEngine {
         string,
         StepResult<any, any, any, any> | (Omit<StepFailure<any, any, any>, 'error'> & { error?: string })
       >;
-      executionContext: ExecutionContext,
+      executionContext: ExecutionContext;
     };
 
     try {

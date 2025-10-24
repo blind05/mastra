@@ -274,8 +274,6 @@ export abstract class Bundler extends MastraBundler {
       );
     }
 
-
-
     const dependenciesToInstall = new Map<string, string>();
     for (const dep of analyzedBundleInfo.externalDependencies) {
       try {

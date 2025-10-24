@@ -595,9 +595,7 @@ export class GeminiLiveVoice extends MastraVoice<
             ...(options.responseModalities ? { response_modalities: options.responseModalities } : {}),
             speech_config: {
               ...(options.languageCode ? { language_code: options.languageCode } : {}),
-              ...(options.speaker
-                ? { voice_config: { prebuilt_voice_config: { voice_name: options.speaker } } }
-                : {}),
+              ...(options.speaker ? { voice_config: { prebuilt_voice_config: { voice_name: options.speaker } } } : {}),
             },
           },
         },
@@ -628,137 +626,137 @@ export class GeminiLiveVoice extends MastraVoice<
    * Send audio stream for processing
    */
   async send(audioData: NodeJS.ReadableStream | Int16Array): Promise<void> {
-      this.validateConnectionState();
+    this.validateConnectionState();
 
-      if ('readable' in audioData && typeof audioData.on === 'function') {
-        const stream = audioData as NodeJS.ReadableStream;
+    if ('readable' in audioData && typeof audioData.on === 'function') {
+      const stream = audioData as NodeJS.ReadableStream;
 
-        stream.on('data', (chunk: Buffer) => {
-          try {
-            const base64Audio = this.audioStreamManager.processAudioChunk(chunk);
-            const message = this.audioStreamManager.createAudioMessage(base64Audio, 'realtime');
-            this.sendEvent('realtime_input', message);
-          } catch (error) {
-            this.log('Failed to process audio chunk', error);
-            this.createAndEmitError(GeminiLiveErrorCode.AUDIO_PROCESSING_ERROR, 'Failed to process audio chunk', error);
-          }
-        });
+      stream.on('data', (chunk: Buffer) => {
+        try {
+          const base64Audio = this.audioStreamManager.processAudioChunk(chunk);
+          const message = this.audioStreamManager.createAudioMessage(base64Audio, 'realtime');
+          this.sendEvent('realtime_input', message);
+        } catch (error) {
+          this.log('Failed to process audio chunk', error);
+          this.createAndEmitError(GeminiLiveErrorCode.AUDIO_PROCESSING_ERROR, 'Failed to process audio chunk', error);
+        }
+      });
 
-        stream.on('error', (error: Error) => {
-          this.log('Audio stream error', error);
-          this.createAndEmitError(GeminiLiveErrorCode.AUDIO_STREAM_ERROR, 'Audio stream error', error);
-        });
+      stream.on('error', (error: Error) => {
+        this.log('Audio stream error', error);
+        this.createAndEmitError(GeminiLiveErrorCode.AUDIO_STREAM_ERROR, 'Audio stream error', error);
+      });
 
-        stream.on('end', () => {
-          this.log('Audio stream ended');
-        });
-      } else {
-        const validateAudio = this.audioStreamManager.validateAndConvertAudioInput(audioData as Int16Array);
-        const base64Audio = this.audioStreamManager.int16ArrayToBase64(validateAudio);
-        const message = this.audioStreamManager.createAudioMessage(base64Audio, 'realtime');
-        this.sendEvent('realtime_input', message);
-      }
+      stream.on('end', () => {
+        this.log('Audio stream ended');
+      });
+    } else {
+      const validateAudio = this.audioStreamManager.validateAndConvertAudioInput(audioData as Int16Array);
+      const base64Audio = this.audioStreamManager.int16ArrayToBase64(validateAudio);
+      const message = this.audioStreamManager.createAudioMessage(base64Audio, 'realtime');
+      this.sendEvent('realtime_input', message);
+    }
   }
 
   /**
    * Process speech from audio stream (traditional STT interface)
    */
   async listen(audioStream: NodeJS.ReadableStream, _options?: GeminiLiveVoiceOptions): Promise<string> {
-      this.validateConnectionState();
+    this.validateConnectionState();
 
-      let transcriptionText = '';
+    let transcriptionText = '';
 
-      // Listen for transcription responses
-      const onWriting = (data: { text: string; role: 'assistant' | 'user' }) => {
-        if (data.role === 'user') {
-          transcriptionText += data.text;
-          this.log('Received transcription text:', { text: data.text, total: transcriptionText });
-        }
-        // Note: We only collect user role text as transcription
-        // Assistant role text would be responses, not transcription
-      };
-
-      // Listen for errors
-      const onError = (error: { message: string; code?: string; details?: unknown }) => {
-        throw new Error(`Transcription failed: ${error.message}`);
-      };
-
-      // Listen for session events
-      const onSession = (data: { state: string }) => {
-        if (data.state === 'disconnected') {
-          throw new Error('Session disconnected during transcription');
-        }
-      };
-
-      // Set up GeminiLiveVoice event listeners
-      this.on('writing', onWriting);
-      this.on('error', onError);
-      this.on('session', onSession);
-
-      try {
-        // Use AudioStreamManager to handle the transcription workflow
-        const result = await this.audioStreamManager.handleAudioTranscription(
-          audioStream,
-          (base64Audio: string) => {
-            // Send audio and await transcript until turn completes
-            return new Promise<string>((resolve, reject) => {
-              try {
-                // Create audio message for transcription
-                const message = this.audioStreamManager.createAudioMessage(base64Audio, 'input');
-
-                const cleanup = () => {
-                  this.off('turnComplete' as any, onTurnComplete as any);
-                  this.off('error', onErr as any);
-                };
-
-                // Handlers
-                const onTurnComplete = () => {
-                  cleanup();
-                  resolve(transcriptionText.trim());
-                };
-
-                const onErr = (e: { message: string }) => {
-                  cleanup();
-                  reject(new Error(e.message));
-                };
-
-                // Wire listeners before sending
-                this.on('turnComplete' as any, onTurnComplete as any);
-                this.on('error', onErr as any);
-
-                // Send to Gemini Live API
-                this.sendEvent('client_content', message);
-                this.log('Sent audio for transcription');
-              } catch (err) {
-                reject(err as Error);
-              }
-            });
-          },
-          (error: Error) => {
-            this.createAndEmitError(GeminiLiveErrorCode.AUDIO_PROCESSING_ERROR, 'Audio transcription failed', error);
-          },
-        );
-
-        return result;
-      } finally {
-        // Clean up event listeners
-        this.off('writing', onWriting);
-        this.off('error', onError);
-        this.off('session', onSession);
+    // Listen for transcription responses
+    const onWriting = (data: { text: string; role: 'assistant' | 'user' }) => {
+      if (data.role === 'user') {
+        transcriptionText += data.text;
+        this.log('Received transcription text:', { text: data.text, total: transcriptionText });
       }
+      // Note: We only collect user role text as transcription
+      // Assistant role text would be responses, not transcription
+    };
+
+    // Listen for errors
+    const onError = (error: { message: string; code?: string; details?: unknown }) => {
+      throw new Error(`Transcription failed: ${error.message}`);
+    };
+
+    // Listen for session events
+    const onSession = (data: { state: string }) => {
+      if (data.state === 'disconnected') {
+        throw new Error('Session disconnected during transcription');
+      }
+    };
+
+    // Set up GeminiLiveVoice event listeners
+    this.on('writing', onWriting);
+    this.on('error', onError);
+    this.on('session', onSession);
+
+    try {
+      // Use AudioStreamManager to handle the transcription workflow
+      const result = await this.audioStreamManager.handleAudioTranscription(
+        audioStream,
+        (base64Audio: string) => {
+          // Send audio and await transcript until turn completes
+          return new Promise<string>((resolve, reject) => {
+            try {
+              // Create audio message for transcription
+              const message = this.audioStreamManager.createAudioMessage(base64Audio, 'input');
+
+              const cleanup = () => {
+                this.off('turnComplete' as any, onTurnComplete as any);
+                this.off('error', onErr as any);
+              };
+
+              // Handlers
+              const onTurnComplete = () => {
+                cleanup();
+                resolve(transcriptionText.trim());
+              };
+
+              const onErr = (e: { message: string }) => {
+                cleanup();
+                reject(new Error(e.message));
+              };
+
+              // Wire listeners before sending
+              this.on('turnComplete' as any, onTurnComplete as any);
+              this.on('error', onErr as any);
+
+              // Send to Gemini Live API
+              this.sendEvent('client_content', message);
+              this.log('Sent audio for transcription');
+            } catch (err) {
+              reject(err as Error);
+            }
+          });
+        },
+        (error: Error) => {
+          this.createAndEmitError(GeminiLiveErrorCode.AUDIO_PROCESSING_ERROR, 'Audio transcription failed', error);
+        },
+      );
+
+      return result;
+    } finally {
+      // Clean up event listeners
+      this.off('writing', onWriting);
+      this.off('error', onError);
+      this.off('session', onSession);
+    }
   }
 
   /**
    * Get available speakers/voices
    */
   async getSpeakers(): Promise<Array<{ voiceId: string; description?: string }>> {
-      // Return available Gemini Live voices
-      return [
-        { voiceId: 'Puck', description: 'Conversational, friendly' },
-        { voiceId: 'Charon', description: 'Deep, authoritative' },
-        { voiceId: 'Kore', description: 'Neutral, professional' },
-        { voiceId: 'Fenrir', description: 'Warm, approachable' },
-      ];
+    // Return available Gemini Live voices
+    return [
+      { voiceId: 'Puck', description: 'Conversational, friendly' },
+      { voiceId: 'Charon', description: 'Deep, authoritative' },
+      { voiceId: 'Kore', description: 'Neutral, professional' },
+      { voiceId: 'Fenrir', description: 'Warm, approachable' },
+    ];
   }
 
   /**

@@ -2,7 +2,6 @@ import type { IMastraLogger } from './logger';
 import { RegisteredLogger } from './logger/constants';
 import { ConsoleLogger } from './logger/default-logger';
 
-
 export class MastraBase {
   component: RegisteredLogger = RegisteredLogger.LLM;
   protected logger: IMastraLogger;

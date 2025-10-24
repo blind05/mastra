@@ -80,10 +80,7 @@ export class ProcessorRunner {
     this.agentName = agentName;
   }
 
-  async runOutputProcessors(
-    messageList: MessageList,
-    tracingContext?: TracingContext,
-  ): Promise<MessageList> {
+  async runOutputProcessors(messageList: MessageList, tracingContext?: TracingContext): Promise<MessageList> {
     const responseMessages = messageList.clear.response.v2();
 
     let processableMessages: MastraMessageV2[] = [...responseMessages];
@@ -288,10 +285,7 @@ export class ProcessorRunner {
     });
   }
 
-  async runInputProcessors(
-    messageList: MessageList,
-    tracingContext?: TracingContext,
-  ): Promise<MessageList> {
+  async runInputProcessors(messageList: MessageList, tracingContext?: TracingContext): Promise<MessageList> {
     const userMessages = messageList.clear.input.v2();
 
     let processableMessages: MastraMessageV2[] = [...userMessages];

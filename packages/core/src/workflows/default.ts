@@ -315,11 +315,7 @@ export class DefaultExecutionEngine extends ExecutionEngine {
             lastOutput.result.status = 'success';
           }
 
-          const result = (await this.fmtReturnValue(
-            params.emitter,
-            stepResults,
-            lastOutput.result,
-          )) as any;
+          const result = (await this.fmtReturnValue(params.emitter, stepResults, lastOutput.result)) as any;
           await this.persistStepUpdate({
             workflowId,
             runId,
@@ -366,12 +362,7 @@ export class DefaultExecutionEngine extends ExecutionEngine {
           },
           'Error executing step: ',
         );
-        const result = (await this.fmtReturnValue(
-          params.emitter,
-          stepResults,
-          lastOutput.result,
-          e as Error,
-        )) as any;
+        const result = (await this.fmtReturnValue(params.emitter, stepResults, lastOutput.result, e as Error)) as any;
         await this.persistStepUpdate({
           workflowId,
           runId,

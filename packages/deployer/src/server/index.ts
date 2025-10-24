@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import { readFile } from 'fs/promises';
 import * as https from 'node:https';
 import { join } from 'path/posix';
