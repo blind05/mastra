@@ -22,7 +22,6 @@ import type {
   AITraceRecord,
   AITracesPaginatedArg,
 } from '@mastra/core/storage';
-import type { Trace } from '@mastra/core/telemetry';
 import type { StepResult, WorkflowRunState } from '@mastra/core/workflows';
 import pgPromise from 'pg-promise';
 import { validateConfig, isCloudSqlConfig, isConnectionStringConfig, isHostConfig } from '../shared/config';
@@ -32,7 +31,6 @@ import { MemoryPG } from './domains/memory';
 import { ObservabilityPG } from './domains/observability';
 import { StoreOperationsPG } from './domains/operations';
 import { ScoresPG } from './domains/scores';
-import { TracesPG } from './domains/traces';
 import { WorkflowsPG } from './domains/workflows';
 
 export type { CreateIndexOptions, IndexInfo } from '@mastra/core/storage';

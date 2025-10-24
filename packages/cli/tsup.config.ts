@@ -9,8 +9,6 @@ export default defineConfig({
     'src/index.ts',
     'src/analytics/index.ts',
     'src/commands/create/create.ts',
-    'src/commands/dev/telemetry-loader.ts',
-    'src/commands/dev/telemetry-resolver.ts',
   ],
   treeshake: true,
   format: ['esm'],

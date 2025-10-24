@@ -31,8 +31,6 @@ export type MultiPrimitiveExecutionOptions = {
 
   /** Model-specific settings like temperature, maxTokens, topP, etc. */
   modelSettings?: LoopOptions['modelSettings'];
-
-  telemetry?: TelemetrySettings;
 };
 
 export type AgentExecutionOptions<
@@ -70,9 +68,6 @@ export type AgentExecutionOptions<
   resourceId?: string;
   /** @deprecated Use memory.thread instead. Thread identifier for conversation continuity */
   threadId?: string;
-
-  /** Telemetry collection settings for observability */
-  telemetry?: TelemetrySettings;
 
   /** Maximum number of steps to run */
   maxSteps?: number;

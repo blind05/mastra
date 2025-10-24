@@ -864,18 +864,7 @@ export class DefaultExecutionEngine extends ExecutionEngine {
           logger: this.logger,
         });
 
-        const telemetry = this.mastra?.getTelemetry();
-        const span = executionContext.executionSpan;
-        if (!telemetry || !span) {
-          return step.execute(proxiedData);
-        }
-
-        return otlpContext.with(trace.setSpan(otlpContext.active(), span), async () => {
-          return telemetry.traceMethod(step.execute.bind(step), {
-            spanName,
-            attributes,
-          })(proxiedData);
-        });
+        return step.execute(proxiedData);
       };
     };
 

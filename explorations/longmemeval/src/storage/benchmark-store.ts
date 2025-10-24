@@ -2,7 +2,6 @@ import { MastraStorage } from '@mastra/core/storage';
 import { MessageList } from '@mastra/core/agent';
 import type { MastraMessageV2 } from '@mastra/core/agent';
 import type { MastraMessageV1, StorageThreadType } from '@mastra/core/memory';
-import type { Trace } from '@mastra/core/telemetry';
 import type {
   TABLE_NAMES,
   StorageColumn,

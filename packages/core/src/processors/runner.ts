@@ -83,7 +83,6 @@ export class ProcessorRunner {
   async runOutputProcessors(
     messageList: MessageList,
     tracingContext?: TracingContext,
-    telemetry?: any,
   ): Promise<MessageList> {
     const responseMessages = messageList.clear.response.v2();
 
@@ -124,32 +123,12 @@ export class ProcessorRunner {
         input: processableMessages,
       });
 
-      if (!telemetry) {
-        processableMessages = await processMethod({
-          messages: processableMessages,
-          abort: ctx.abort,
-          tracingContext: { currentSpan: processorSpan },
-        });
-      } else {
-        await telemetry.traceMethod(
-          async () => {
-            processableMessages = await processMethod({
-              messages: processableMessages,
-              abort: ctx.abort,
-              tracingContext: { currentSpan: processorSpan },
-            });
-            return processableMessages;
-          },
-          {
-            spanName: `agent.outputProcessor.${processor.name}`,
-            attributes: {
-              'processor.name': processor.name,
-              'processor.index': index.toString(),
-              'processor.total': this.outputProcessors.length.toString(),
-            },
-          },
-        )();
-      }
+      processableMessages = await processMethod({
+        messages: processableMessages,
+        abort: ctx.abort,
+        tracingContext: { currentSpan: processorSpan },
+      });
+
       processorSpan?.end({ output: processableMessages });
     }
 
@@ -312,7 +291,6 @@ export class ProcessorRunner {
   async runInputProcessors(
     messageList: MessageList,
     tracingContext?: TracingContext,
-    telemetry?: any,
   ): Promise<MessageList> {
     const userMessages = messageList.clear.input.v2();
 
@@ -353,32 +331,12 @@ export class ProcessorRunner {
         input: processableMessages,
       });
 
-      if (!telemetry) {
-        processableMessages = await processMethod({
-          messages: processableMessages,
-          abort: ctx.abort,
-          tracingContext: { currentSpan: processorSpan },
-        });
-      } else {
-        await telemetry.traceMethod(
-          async () => {
-            processableMessages = await processMethod({
-              messages: processableMessages,
-              abort: ctx.abort,
-              tracingContext: { currentSpan: processorSpan },
-            });
-            return processableMessages;
-          },
-          {
-            spanName: `agent.inputProcessor.${processor.name}`,
-            attributes: {
-              'processor.name': processor.name,
-              'processor.index': index.toString(),
-              'processor.total': this.inputProcessors.length.toString(),
-            },
-          },
-        )();
-      }
+      processableMessages = await processMethod({
+        messages: processableMessages,
+        abort: ctx.abort,
+        tracingContext: { currentSpan: processorSpan },
+      });
+
       processorSpan?.end({ output: processableMessages });
     }
 

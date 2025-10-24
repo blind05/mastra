@@ -58,7 +58,6 @@ export const getModelOutputForTripwire = async <
     },
     modelSettings: options.modelSettings,
     headers: options.modelSettings?.headers,
-    telemetry_settings: options.telemetry,
   });
 
   const modelOutput = new MastraModelOutput<OUTPUT>({
@@ -72,7 +71,6 @@ export const getModelOutputForTripwire = async <
     options: {
       runId,
       rootSpan,
-      telemetry_settings: options.telemetry,
       structuredOutput: options.structuredOutput,
       tracingContext,
       onFinish: options.onFinish as any, // Fix these types after the types PR is merged

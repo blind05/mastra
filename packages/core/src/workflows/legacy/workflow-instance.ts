@@ -72,7 +72,6 @@ export class WorkflowInstance<
 
   #runId: string;
   #state: any | null = null;
-  #executionSpan: Span | undefined;
 
   #onStepTransition: Set<
     (
@@ -737,27 +736,10 @@ export class WorkflowInstance<
         ...context,
       };
 
-      // Only trace if telemetry is available and action exists
-      const finalAction = this.#mastra?.getTelemetry()
-        ? executeStep(execute, `workflow.${this.name}.action.${stepId}`, {
-            componentName: this.name,
-            runId: rest.runId as string,
-          })
-        : execute;
-
-      return finalAction ? await finalAction({ context: mergedData, ...rest }) : {};
+      return execute ? await execute({ context: mergedData, ...rest }) : {};
     };
 
-    // Only trace handler if telemetry is available
-
     const finalHandler = ({ context, ...rest }: ActionContext<TSteps[number]['inputSchema']>) => {
-      if (this.#executionSpan) {
-        return executeStep(handler, `workflow.${this.name}.step.${stepId}`, {
-          componentName: this.name,
-          runId: rest?.runId as string,
-        })({ context, ...rest });
-      }
-
       return handler({ context, ...rest });
     };
 

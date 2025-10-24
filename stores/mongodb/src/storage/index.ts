@@ -23,7 +23,6 @@ import type {
   UpdateAISpanRecord,
 } from '@mastra/core/storage';
 import { MastraStorage } from '@mastra/core/storage';
-import type { Trace } from '@mastra/core/telemetry';
 import type { StepResult, WorkflowRunState } from '@mastra/core/workflows';
 import { MongoDBConnector } from './connectors/MongoDBConnector';
 import { LegacyEvalsMongoDB } from './domains/legacy-evals';
@@ -31,7 +30,6 @@ import { MemoryStorageMongoDB } from './domains/memory';
 import { ObservabilityMongoDB } from './domains/observability';
 import { StoreOperationsMongoDB } from './domains/operations';
 import { ScoresStorageMongoDB } from './domains/scores';
-import { TracesStorageMongoDB } from './domains/traces';
 import { WorkflowsStorageMongoDB } from './domains/workflows';
 import type { MongoDBConfig } from './types';
 

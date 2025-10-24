@@ -1979,71 +1979,6 @@ export function generateTextTestsV5({ loopFn, runId }: { loopFn: typeof loop; ru
     //   });
     // });
 
-    // describe.todo('telemetry', () => {
-    //   let tracer: MockTracer;
-
-    //   beforeEach(() => {
-    //     tracer = new MockTracer();
-    //   });
-
-    //   it('should not record any telemetry data when not explicitly enabled', async () => {
-    //     await generateText({
-    //       model: new MockLanguageModelV2({
-    //         doGenerate: async ({}) => ({
-    //           ...dummyResponseValues,
-    //           content: [{ type: 'text', text: 'Hello, world!' }],
-    //         }),
-    //       }),
-    //       prompt: 'prompt',
-    //       experimental_telemetry: { tracer },
-    //     });
-
-    //     expect(tracer.jsonSpans).toMatchSnapshot();
-    //   });
-
-    //   it('should record telemetry data when enabled', async () => {
-    //     await generateText({
-    //       model: new MockLanguageModelV2({
-    //         doGenerate: async ({}) => ({
-    //           ...dummyResponseValues,
-    //           content: [{ type: 'text', text: 'Hello, world!' }],
-    //           response: {
-    //             id: 'test-id-from-model',
-    //             timestamp: new Date(10000),
-    //             modelId: 'test-response-model-id',
-    //           },
-    //           providerMetadata: {
-    //             testProvider: {
-    //               testKey: 'testValue',
-    //             },
-    //           },
-    //         }),
-    //       }),
-    //       prompt: 'prompt',
-    //       topK: 0.1,
-    //       topP: 0.2,
-    //       frequencyPenalty: 0.3,
-    //       presencePenalty: 0.4,
-    //       temperature: 0.5,
-    //       stopSequences: ['stop'],
-    //       headers: {
-    //         header1: 'value1',
-    //         header2: 'value2',
-    //       },
-    //       experimental_telemetry: {
-    //         isEnabled: true,
-    //         functionId: 'test-function-id',
-    //         metadata: {
-    //           test1: 'value1',
-    //           test2: false,
-    //         },
-    //         tracer,
-    //       },
-    //     });
-
-    //     expect(tracer.jsonSpans).toMatchSnapshot();
-    //   });
-
     it('should record successful tool call', async () => {
       const tracer = new MockTracer();
       const messageList = createMessageListWithUserMessage();
@@ -2226,45 +2161,6 @@ export function generateTextTestsV5({ loopFn, runId }: { loopFn: typeof loop; ru
     //     expect(exceptionEvent.attributes?.['exception.stack']).toContain('Tool execution failed');
     //     expect(exceptionEvent.time).toEqual([0, 0]);
     //   });
-
-    //   it('should not record telemetry inputs / outputs when disabled', async () => {
-    //     await generateText({
-    //       model: new MockLanguageModelV2({
-    //         doGenerate: async ({}) => ({
-    //           ...dummyResponseValues,
-    //           content: [
-    //             {
-    //               type: 'tool-call',
-    //               toolCallType: 'function',
-    //               toolCallId: 'call-1',
-    //               toolName: 'tool1',
-    //               input: `{ "value": "value" }`,
-    //             },
-    //           ],
-    //         }),
-    //       }),
-    //       tools: {
-    //         tool1: {
-    //           inputSchema: z.object({ value: z.string() }),
-    //           execute: async () => 'result1',
-    //         },
-    //       },
-    //       prompt: 'test-input',
-    //       experimental_telemetry: {
-    //         isEnabled: true,
-    //         recordInputs: false,
-    //         recordOutputs: false,
-    //         tracer,
-    //       },
-    //       _internal: {
-    //         generateId: () => 'test-id',
-    //         currentDate: () => new Date(0),
-    //       },
-    //     });
-
-    //     expect(tracer.jsonSpans).toMatchSnapshot();
-    //   });
-    // });
 
     // describe.todo('tool callbacks', () => {
     //   it('should invoke callbacks in the correct order', async () => {

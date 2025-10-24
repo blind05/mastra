@@ -117,7 +117,6 @@ type MastraCustomLLMOptions<Z extends ZodSchema | JSONSchema7 | undefined = unde
   tools?: Record<string, CoreTool>;
   onStepFinish?: (step: unknown) => Promise<void> | void;
   experimental_output?: Z;
-  telemetry?: TelemetrySettings;
   threadId?: string;
   resourceId?: string;
   runtimeContext: RuntimeContext;

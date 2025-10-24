@@ -43,7 +43,6 @@ export const referenceSections: Record<string, Array<{ title: string; href: stri
     { title: 'Mastra Client', href: '/docs/reference/client-js/mastra-client' },
     { title: 'Memory', href: '/docs/reference/client-js/memory' },
     { title: 'Observability', href: '/docs/reference/client-js/observability' },
-    { title: 'Telemetry', href: '/docs/reference/client-js/telemetry' },
     { title: 'Tools', href: '/docs/reference/client-js/tools' },
     { title: 'Vectors', href: '/docs/reference/client-js/vectors' },
     { title: 'Workflows Legacy', href: '/docs/reference/client-js/workflows-legacy' },

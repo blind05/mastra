@@ -21,13 +21,11 @@ import type {
   PaginationArgs,
   StorageResourceType,
 } from '@mastra/core/storage';
-import type { Trace } from '@mastra/core/telemetry';
 import type { StepResult, WorkflowRunState } from '@mastra/core/workflows';
 import { LegacyEvalsStorageClickhouse } from './domains/legacy-evals';
 import { MemoryStorageClickhouse } from './domains/memory';
 import { StoreOperationsClickhouse } from './domains/operations';
 import { ScoresStorageClickhouse } from './domains/scores';
-import { TracesStorageClickhouse } from './domains/traces';
 import { WorkflowsStorageClickhouse } from './domains/workflows';
 
 type IntervalUnit =

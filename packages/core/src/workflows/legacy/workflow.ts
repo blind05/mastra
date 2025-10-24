@@ -95,7 +95,6 @@ export class LegacyWorkflow<
 
     if (mastra) {
       this.__registerPrimitives({
-        telemetry: mastra.getTelemetry(),
         logger: mastra.getLogger(),
       });
       this.#mastra = mastra;
@@ -1019,10 +1018,6 @@ export class LegacyWorkflow<
     return storage.getWorkflowRuns({ workflowName: this.name, ...(args ?? {}) }) as unknown as LegacyWorkflowRuns;
   }
 
-  getExecutionSpan(runId: string) {
-    return this.#runs.get(runId)?.executionSpan;
-  }
-
   #getParentStepKey({
     loop_check = false,
     if_else_check = false,
@@ -1067,28 +1062,6 @@ export class LegacyWorkflow<
   #makeStepDef<TStepId extends TSteps[number]['id'], TSteps extends Step<any, any, any>[]>(
     stepId: TStepId,
   ): StepDef<TStepId, TSteps, any, any>[TStepId] {
-    const executeStep = (
-      handler: (data: any) => Promise<(data: any) => void>,
-      spanName: string,
-      attributes?: Record<string, string>,
-    ) => {
-      return async (data: any) => {
-        return await otlpContext.with(
-          trace.setSpan(otlpContext.active(), this.getExecutionSpan(attributes?.runId ?? data?.runId) as Span),
-          async () => {
-            if (this?.telemetry) {
-              return this.telemetry.traceMethod(handler, {
-                spanName,
-                attributes,
-              })(data);
-            } else {
-              return handler(data);
-            }
-          },
-        );
-      };
-    };
-
     // NOTE: destructuring rest breaks some injected runtime fields, like runId
     // TODO: investigate why that is exactly
     const handler = async ({ context, ...rest }: ActionContext<TSteps[number]['inputSchema']>) => {
@@ -1100,32 +1073,15 @@ export class LegacyWorkflow<
       // Merge static payload with dynamically resolved variables
       // Variables take precedence over payload values
 
-      // Only trace if telemetry is available and action exists
-      const finalAction = this.telemetry
-        ? executeStep(execute, `workflow.${this.name}.action.${stepId}`, {
-            componentName: this.name,
-            runId: rest.runId as string,
-          })
-        : execute;
-
-      return finalAction
-        ? await finalAction({
+      return execute
+        ? await execute({
             context: { ...context, inputData: { ...(context?.inputData || {}), ...(payload as {}) } },
             ...rest,
           })
         : {};
     };
 
-    // Only trace handler if telemetry is available
-
     const finalHandler = ({ context, ...rest }: ActionContext<TSteps[number]['inputSchema']>) => {
-      if (this.getExecutionSpan(rest?.runId as string)) {
-        return executeStep(handler, `workflow.${this.name}.step.${stepId}`, {
-          componentName: this.name,
-          runId: rest?.runId as string,
-        })({ context, ...rest });
-      }
-
       return handler({ context, ...rest });
     };
 
@@ -1259,10 +1215,6 @@ export class LegacyWorkflow<
   }
 
   __registerPrimitives(p: MastraPrimitives) {
-    if (p.telemetry) {
-      this.__setTelemetry(p.telemetry);
-    }
-
     if (p.logger) {
       this.__setLogger(p.logger);
     }

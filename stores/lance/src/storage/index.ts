@@ -17,7 +17,6 @@ import type {
   StorageGetTracesPaginatedArg,
   StorageResourceType,
 } from '@mastra/core/storage';
-import type { Trace } from '@mastra/core/telemetry';
 import type { StepResult, WorkflowRunState } from '@mastra/core/workflows';
 import { StoreLegacyEvalsLance } from './domains/legacy-evals';
 import { StoreMemoryLance } from './domains/memory';
