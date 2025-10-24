@@ -684,5 +684,135 @@ describe('SemanticRecall', () => {
         }),
       );
     });
+
+    it('should format cross-thread messages with timestamps and labels when scope is resource', async () => {
+      const processor = new SemanticRecall({
+        storage: mockStorage,
+        vector: mockVector,
+        embedder: mockEmbedder,
+        scope: 'resource',
+      });
+
+      const inputMessages: MastraMessageV2[] = [
+        {
+          id: 'msg-new',
+          role: 'user',
+          content: 'What did we discuss before?',
+        },
+      ];
+
+      const crossThreadMessage1: MastraMessageV2 = {
+        id: 'msg-other-1',
+        role: 'user',
+        content: 'Previous question',
+        threadId: 'other-thread-1',
+        createdAt: '2024-01-15T10:30:00.000Z',
+      };
+
+      const crossThreadMessage2: MastraMessageV2 = {
+        id: 'msg-other-2',
+        role: 'assistant',
+        content: 'Previous answer',
+        threadId: 'other-thread-1',
+        createdAt: '2024-01-15T10:31:00.000Z',
+      };
+
+      const sameThreadMessage: MastraMessageV2 = {
+        id: 'msg-same',
+        role: 'user',
+        content: 'Same thread message',
+        threadId: 'thread-1', // Same as current thread in runtimeContext
+        createdAt: '2024-01-15T11:00:00.000Z',
+      };
+
+      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+        embeddings: [[0.1, 0.2, 0.3]],
+      });
+
+      vi.mocked(mockVector.listIndexes).mockResolvedValue([{ name: 'mastra-memory', dimension: 3 }]);
+      vi.mocked(mockVector.query).mockResolvedValue([
+        { id: 'msg-other-1', score: 0.9 },
+        { id: 'msg-other-2', score: 0.85 },
+        { id: 'msg-same', score: 0.8 },
+      ]);
+
+      vi.mocked(mockStorage.getMessages).mockResolvedValue([
+        crossThreadMessage1,
+        crossThreadMessage2,
+        sameThreadMessage,
+      ]);
+
+      const result = await processor.processInput({
+        messages: inputMessages,
+        abort: vi.fn() as any,
+        runtimeContext,
+      });
+
+      // Should have: system message (cross-thread) + same-thread message + original message
+      expect(result).toHaveLength(3);
+
+      // First message should be the formatted cross-thread system message
+      expect(result[0]!.role).toBe('system');
+      expect(result[0]!.content).toContain('<remembered_from_other_conversation>');
+      expect(result[0]!.content).toContain('Previous question');
+      expect(result[0]!.content).toContain('Previous answer');
+      expect(result[0]!.content).toContain('User:');
+      expect(result[0]!.content).toContain('Assistant:');
+
+      // Second message should be the same-thread message
+      expect(result[1]).toEqual(sameThreadMessage);
+
+      // Third message should be the original input
+      expect(result[2]).toEqual(inputMessages[0]);
+    });
+
+    it('should not format cross-thread messages when scope is thread', async () => {
+      const processor = new SemanticRecall({
+        storage: mockStorage,
+        vector: mockVector,
+        embedder: mockEmbedder,
+        scope: 'thread',
+      });
+
+      const inputMessages: MastraMessageV2[] = [
+        {
+          id: 'msg-new',
+          role: 'user',
+          content: 'Test query',
+        },
+      ];
+
+      const similarMessage: MastraMessageV2 = {
+        id: 'msg-similar',
+        role: 'user',
+        content: 'Similar message',
+        threadId: 'thread-123',
+        createdAt: '2024-01-15T10:00:00.000Z',
+      };
+
+      vi.mocked(mockEmbedder.embed).mockResolvedValue({
+        embeddings: [[0.1, 0.2, 0.3]],
+      });
+
+      vi.mocked(mockVector.listIndexes).mockResolvedValue([{ name: 'mastra-memory', dimension: 3 }]);
+      vi.mocked(mockVector.query).mockResolvedValue([{ id: 'msg-similar', score: 0.9 }]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue([similarMessage]);
+
+      const result = await processor.processInput({
+        messages: inputMessages,
+        abort: vi.fn() as any,
+        runtimeContext,
+      });
+
+      // Should just prepend the similar message, no special formatting
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(similarMessage);
+      expect(result[1]).toEqual(inputMessages[0]);
+
+      // No system message with cross-thread formatting
+      expect(result.some(m => m.role === 'system' && m.content.includes('<remembered_from_other_conversation>'))).toBe(
+        false,
+      );
+    });
   });
 });

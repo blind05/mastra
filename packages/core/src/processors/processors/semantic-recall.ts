@@ -175,6 +175,20 @@ export class SemanticRecall implements InputProcessor {
         return messages;
       }
 
+      // If scope is 'resource', check for cross-thread messages and format them specially
+      if (this.scope === 'resource') {
+        const crossThreadMessages = newMessages.filter(m => m.threadId && m.threadId !== threadId);
+
+        if (crossThreadMessages.length > 0) {
+          // Format cross-thread messages as a system message
+          const formattedSystemMessage = this.formatCrossThreadMessages(crossThreadMessages);
+
+          // Return system message + same-thread messages + original messages
+          const sameThreadMessages = newMessages.filter(m => !m.threadId || m.threadId === threadId);
+          return [formattedSystemMessage, ...sameThreadMessages, ...messages];
+        }
+      }
+
       // Prepend similar messages to input
       // They come first so they provide context for the new user message
       return [...newMessages, ...messages];
@@ -183,6 +197,51 @@ export class SemanticRecall implements InputProcessor {
       console.error('[SemanticRecall] Error during semantic search:', error);
       return messages;
     }
+  }
+
+  /**
+   * Format cross-thread messages as a system message with timestamps and labels
+   */
+  private formatCrossThreadMessages(messages: MastraMessageV2[]): MastraMessageV2 {
+    // Group messages by date
+    const messagesByDate = new Map<string, MastraMessageV2[]>();
+
+    for (const msg of messages) {
+      const date = msg.createdAt ? new Date(msg.createdAt).toLocaleDateString() : 'Unknown Date';
+      if (!messagesByDate.has(date)) {
+        messagesByDate.set(date, []);
+      }
+      messagesByDate.get(date)!.push(msg);
+    }
+
+    // Format messages with timestamps and labels
+    const formattedSections: string[] = [];
+
+    for (const [date, msgs] of messagesByDate) {
+      const formattedMessages = msgs
+        .map(msg => {
+          const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : '';
+          const role = msg.role === 'user' ? 'User' : 'Assistant';
+          const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+          return `[${time}] ${role}: ${content}`;
+        })
+        .join('\n');
+
+      formattedSections.push(`Date: ${date}\n${formattedMessages}`);
+    }
+
+    const formattedContent = `<remembered_from_other_conversation>
+The following messages are from previous conversations with this user. They may provide helpful context:
+
+${formattedSections.join('\n\n')}
+</remembered_from_other_conversation>`;
+
+    return {
+      id: `cross-thread-context-${Date.now()}`,
+      role: 'system',
+      content: formattedContent,
+      createdAt: new Date().toISOString(),
+    };
   }
 
   /**
