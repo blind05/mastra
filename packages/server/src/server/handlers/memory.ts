@@ -109,34 +109,6 @@ export async function getThreadsHandler({
   agentId,
   resourceId,
   runtimeContext,
-  orderBy,
-  sortDirection,
-}: Pick<MemoryContext, 'mastra' | 'agentId' | 'resourceId' | 'runtimeContext'> & ThreadSortOptions) {
-  try {
-    const memory = await getMemoryFromContext({ mastra, agentId, runtimeContext });
-
-    if (!memory) {
-      throw new HTTPException(400, { message: 'Memory is not initialized' });
-    }
-
-    validateBody({ resourceId });
-
-    const threads = await memory.getThreadsByResourceId({
-      resourceId: resourceId!,
-      orderBy,
-      sortDirection,
-    });
-    return threads;
-  } catch (error) {
-    return handleError(error, 'Error getting threads');
-  }
-}
-
-export async function getThreadsPaginatedHandler({
-  mastra,
-  agentId,
-  resourceId,
-  runtimeContext,
   page,
   perPage,
   orderBy,
@@ -154,7 +126,7 @@ export async function getThreadsPaginatedHandler({
 
     validateBody({ resourceId });
 
-    const result = await memory.getThreadsByResourceIdPaginated({
+    const result = await memory.getThreadsByResourceId({
       resourceId: resourceId!,
       page,
       perPage,
@@ -163,7 +135,7 @@ export async function getThreadsPaginatedHandler({
     });
     return result;
   } catch (error) {
-    return handleError(error, 'Error getting paginated threads');
+    return handleError(error, 'Error getting threads');
   }
 }
 
@@ -361,7 +333,7 @@ export async function getMessagesPaginatedHandler({
       throw new HTTPException(404, { message: 'Thread not found' });
     }
 
-    const result = await storage.getMessagesPaginated({ threadId: threadId!, resourceId, selectBy, format });
+    const result = await storage.getMessages({ threadId: threadId!, resourceId, selectBy, format });
     return result;
   } catch (error) {
     return handleError(error, 'Error getting messages');

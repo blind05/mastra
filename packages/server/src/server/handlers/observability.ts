@@ -1,4 +1,4 @@
-import type { AITracesPaginatedArg, StoragePagination } from '@mastra/core';
+import type { AITracesArg, StoragePagination } from '@mastra/core';
 import { scoreTraces } from '@mastra/core/scores/scoreTraces';
 import { HTTPException } from '../http-exception';
 import type { Context } from '../types';
@@ -6,7 +6,7 @@ import { handleError } from './error';
 
 interface ObservabilityContext extends Context {
   traceId?: string;
-  body?: AITracesPaginatedArg;
+  body?: AITracesArg;
 }
 
 interface ScoreTracesContext extends Context {
@@ -47,10 +47,10 @@ export async function getAITraceHandler({ mastra, traceId }: ObservabilityContex
 }
 
 /**
- * Get paginated AI traces with filtering and pagination
+ * Get AI traces with filtering and pagination
  * Returns only root spans (parent spans) for pagination, not child spans
  */
-export async function getAITracesPaginatedHandler({ mastra, body }: ObservabilityContext) {
+export async function getAITracesHandler({ mastra, body }: ObservabilityContext) {
   try {
     const storage = mastra.getStorage();
     if (!storage) {
@@ -83,12 +83,12 @@ export async function getAITracesPaginatedHandler({ mastra, body }: Observabilit
       }
     }
 
-    return storage.getAITracesPaginated({
+    return storage.getAITraces({
       pagination,
       filters,
     });
   } catch (error) {
-    handleError(error, 'Error getting AI traces paginated');
+    handleError(error, 'Error getting AI traces');
   }
 }
 
