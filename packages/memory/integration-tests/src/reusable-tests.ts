@@ -495,6 +495,63 @@ export function getResuableTests(memory: Memory, workerTestConfig?: WorkerTestCo
           ),
         ).toBe(true);
       });
+
+      it('should support metadata filtering in semantic recall (ISSUE #8610)', async () => {
+        // This test demonstrates the desired functionality from issue #8610
+        // User wants to filter semantic recall by metadata fields like projectId
+
+        // Create messages with different projectId metadata
+        const projectAMessages = [
+          createTestMessage(thread.id, 'Working on project A feature X', 'user'),
+          createTestMessage(thread.id, 'Project A is going well', 'assistant'),
+        ];
+
+        const projectBMessages = [
+          createTestMessage(thread.id, 'Working on project B feature Y', 'user'),
+          createTestMessage(thread.id, 'Project B needs more work', 'assistant'),
+        ];
+
+        // Save messages with metadata
+        await memory.saveMessages({
+          messages: projectAMessages,
+          metadata: { projectId: 'project-a' },
+        });
+
+        await memory.saveMessages({
+          messages: projectBMessages,
+          metadata: { projectId: 'project-b' },
+        });
+
+        // This should work but currently doesn't - the filter property doesn't exist
+        // The test will fail because the SemanticRecall type doesn't have a filter property
+        const result = await memory.rememberMessages({
+          threadId: thread.id,
+          resourceId,
+          vectorMessageSearch: 'project work',
+          config: {
+            lastMessages: 0,
+            semanticRecall: {
+              topK: 5,
+              messageRange: 1,
+              scope: 'resource',
+              // This is the desired functionality that doesn't exist yet
+              filter: {
+                projectId: { $eq: 'project-a' },
+              },
+            },
+          },
+        });
+
+        // Should only return messages from project A, not project B
+        expect(result.messages).toBeDefined();
+        expect(result.messages.length).toBeGreaterThan(0);
+
+        // All returned messages should be from project A
+        // This assertion will fail because the filter isn't implemented
+        result.messages.forEach(message => {
+          expect(message.metadata?.projectId).toBe('project-a');
+        });
+      });
     });
 
     describe('Message Types and Roles', () => {
