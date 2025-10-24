@@ -1,5 +1,16 @@
 # @mastra/playground-ui
 
+## 6.7.1-alpha.0
+
+### Patch Changes
+
+- Fix peerdependencies ([`eb7c1c8`](https://github.com/mastra-ai/mastra/commit/eb7c1c8c592d8fb16dfd250e337d9cdc73c8d5de))
+
+- Updated dependencies [[`eb7c1c8`](https://github.com/mastra-ai/mastra/commit/eb7c1c8c592d8fb16dfd250e337d9cdc73c8d5de)]:
+  - @mastra/client-js@0.16.6-alpha.0
+  - @mastra/react@0.0.12-alpha.0
+  - @mastra/core@0.23.1-alpha.0
+
 ## 6.7.0
 
 ### Minor Changes

@@ -1,5 +1,18 @@
 # @mastra/longmemeval
 
+## 0.1.33-alpha.0
+
+### Patch Changes
+
+- Fix peerdependencies ([`eb7c1c8`](https://github.com/mastra-ai/mastra/commit/eb7c1c8c592d8fb16dfd250e337d9cdc73c8d5de))
+
+- Updated dependencies [[`eb7c1c8`](https://github.com/mastra-ai/mastra/commit/eb7c1c8c592d8fb16dfd250e337d9cdc73c8d5de)]:
+  - @mastra/fastembed@0.10.6-alpha.0
+  - @mastra/memory@0.15.9-alpha.0
+  - @mastra/libsql@0.16.1-alpha.0
+  - @mastra/rag@1.3.3-alpha.0
+  - @mastra/core@0.23.1-alpha.0
+
 ## 0.1.32
 
 ### Patch Changes
