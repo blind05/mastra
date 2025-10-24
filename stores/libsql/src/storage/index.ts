@@ -15,7 +15,6 @@ import type {
   TABLE_NAMES,
   WorkflowRun,
   WorkflowRuns,
-  StorageGetTracesArg,
   StorageDomains,
   ThreadSortOptions,
   AISpanRecord,
@@ -99,7 +98,6 @@ export class LibSQLStore extends MastraStorage {
     });
 
     const scores = new ScoresLibSQL({ client: this.client, operations });
-    const traces = new TracesLibSQL({ client: this.client, operations });
     const workflows = new WorkflowsLibSQL({ client: this.client, operations });
     const memory = new MemoryLibSQL({ client: this.client, operations });
     const legacyEvals = new LegacyEvalsLibSQL({ client: this.client });
@@ -108,7 +106,6 @@ export class LibSQLStore extends MastraStorage {
     this.stores = {
       operations,
       scores,
-      traces,
       workflows,
       memory,
       legacyEvals,
@@ -333,25 +330,6 @@ export class LibSQLStore extends MastraStorage {
     entityType: string;
   }): Promise<{ pagination: PaginationInfo; scores: ScoreRowData[] }> {
     return this.stores.scores.getScoresByEntityId({ entityId, entityType, pagination });
-  }
-
-  /**
-   * TRACES
-   */
-
-  /**
-   * @deprecated use getTracesPaginated instead.
-   */
-  async getTraces(args: StorageGetTracesArg): Promise<Trace[]> {
-    return this.stores.traces.getTraces(args);
-  }
-
-  async getTracesPaginated(args: StorageGetTracesArg): Promise<PaginationInfo & { traces: Trace[] }> {
-    return this.stores.traces.getTracesPaginated(args);
-  }
-
-  async batchTraceInsert(args: { records: Record<string, any>[] }): Promise<void> {
-    return this.stores.traces.batchTraceInsert(args);
   }
 
   /**

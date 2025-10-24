@@ -4,7 +4,6 @@ import type {
   GenerateObjectResult as OriginalGenerateObjectResult,
   StreamTextResult as OriginalStreamTextResult,
   StreamObjectResult as OriginalStreamObjectResult,
-  TelemetrySettings,
   UIMessage,
   Tool,
   generateText,

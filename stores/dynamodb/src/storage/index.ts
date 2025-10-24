@@ -12,7 +12,6 @@ import type {
   WorkflowRun,
   WorkflowRuns,
   TABLE_NAMES,
-  StorageGetTracesArg,
   PaginationInfo,
   StorageColumn,
   StoragePagination,
@@ -28,7 +27,6 @@ import { LegacyEvalsDynamoDB } from './domains/legacy-evals';
 import { MemoryStorageDynamoDB } from './domains/memory';
 import { StoreOperationsDynamoDB } from './domains/operations';
 import { ScoresStorageDynamoDB } from './domains/score';
-import { TracesStorageDynamoDB } from './domains/traces';
 import { WorkflowStorageDynamoDB } from './domains/workflows';
 
 export interface DynamoDBStoreConfig {
@@ -84,8 +82,6 @@ export class DynamoDBStore extends MastraStorage {
         client: this.client,
       });
 
-      const traces = new TracesStorageDynamoDB({ service: this.service, operations });
-
       const workflows = new WorkflowStorageDynamoDB({ service: this.service });
 
       const memory = new MemoryStorageDynamoDB({ service: this.service });
@@ -95,7 +91,6 @@ export class DynamoDBStore extends MastraStorage {
       this.stores = {
         operations,
         legacyEvals: new LegacyEvalsDynamoDB({ service: this.service, tableName: this.tableName }),
-        traces,
         workflows,
         memory,
         scores,
@@ -335,26 +330,6 @@ export class DynamoDBStore extends MastraStorage {
       }[];
   }): Promise<MastraMessageV2[]> {
     return this.stores.memory.updateMessages(_args);
-  }
-
-  // Trace operations
-  async getTraces(args: {
-    name?: string;
-    scope?: string;
-    page: number;
-    perPage: number;
-    attributes?: Record<string, string>;
-    filters?: Record<string, any>;
-  }): Promise<any[]> {
-    return this.stores.traces.getTraces(args);
-  }
-
-  async batchTraceInsert({ records }: { records: Record<string, any>[] }): Promise<void> {
-    return this.stores.traces.batchTraceInsert({ records });
-  }
-
-  async getTracesPaginated(_args: StorageGetTracesArg): Promise<PaginationInfo & { traces: Trace[] }> {
-    return this.stores.traces.getTracesPaginated(_args);
   }
 
   // Workflow operations

@@ -534,10 +534,6 @@ export async function createHonoServer(
     if (options?.playground) {
       // For HTML routes, serve index.html with dynamic replacements
       let indexHtml = await readFile(join(process.cwd(), './playground/index.html'), 'utf-8');
-      indexHtml = indexHtml.replace(
-        `'%%MASTRA_TELEMETRY_DISABLED%%'`,
-        `${Boolean(process.env.MASTRA_TELEMETRY_DISABLED)}`,
-      );
 
       // Inject the server port information
       const serverOptions = mastra.getServer();

@@ -149,7 +149,6 @@ export class OpenAIVoice extends MastraVoice {
 
     const { speaker, responseFormat, speed, ...otherOptions } = options || {};
 
-    const audio = await this.traced(async () => {
       const response = await this.speechClient!.audio.speech.create({
         model: this.speechModel?.name ?? 'tts-1',
         voice: (speaker ?? this.speaker) as OpenAIVoiceId,
@@ -163,9 +162,6 @@ export class OpenAIVoice extends MastraVoice {
       const buffer = Buffer.from(await response.arrayBuffer());
       passThrough.end(buffer);
       return passThrough;
-    }, 'voice.openai.speak')();
-
-    return audio;
   }
 
   /**
@@ -211,7 +207,6 @@ export class OpenAIVoice extends MastraVoice {
     }
     const audioBuffer = Buffer.concat(chunks);
 
-    const text = await this.traced(async () => {
       const { filetype, ...otherOptions } = options || {};
       const file = new File([audioBuffer], `audio.${filetype || 'mp3'}`);
 
@@ -222,8 +217,5 @@ export class OpenAIVoice extends MastraVoice {
       });
 
       return response.text;
-    }, 'voice.openai.listen')();
-
-    return text;
   }
 }

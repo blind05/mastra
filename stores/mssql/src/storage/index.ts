@@ -17,8 +17,6 @@ import type {
   StoragePagination,
   ThreadSortOptions,
   StorageDomains,
-  StorageGetTracesArg,
-  StorageGetTracesPaginatedArg,
 } from '@mastra/core/storage';
 import type { StepResult, WorkflowRunState } from '@mastra/core/workflows';
 import sql from 'mssql';
@@ -88,14 +86,12 @@ export class MSSQLStore extends MastraStorage {
       const legacyEvals = new LegacyEvalsMSSQL({ pool: this.pool, schema: this.schema });
       const operations = new StoreOperationsMSSQL({ pool: this.pool, schemaName: this.schema });
       const scores = new ScoresMSSQL({ pool: this.pool, operations, schema: this.schema });
-      const traces = new TracesMSSQL({ pool: this.pool, operations, schema: this.schema });
       const workflows = new WorkflowsMSSQL({ pool: this.pool, operations, schema: this.schema });
       const memory = new MemoryMSSQL({ pool: this.pool, schema: this.schema, operations });
 
       this.stores = {
         operations,
         scores,
-        traces,
         workflows,
         legacyEvals,
         memory,
@@ -173,20 +169,6 @@ export class MSSQLStore extends MastraStorage {
     return this.stores.legacyEvals.getEvals(options);
   }
 
-  /**
-   * @deprecated use getTracesPaginated instead
-   */
-  public async getTraces(args: StorageGetTracesArg): Promise<Trace[]> {
-    return this.stores.traces.getTraces(args);
-  }
-
-  public async getTracesPaginated(args: StorageGetTracesPaginatedArg): Promise<PaginationInfo & { traces: Trace[] }> {
-    return this.stores.traces.getTracesPaginated(args);
-  }
-
-  async batchTraceInsert({ records }: { records: Record<string, any>[] }): Promise<void> {
-    return this.stores.traces.batchTraceInsert({ records });
-  }
 
   async createTable({
     tableName,

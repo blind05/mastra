@@ -1,4 +1,3 @@
-import type { TelemetrySettings } from 'ai';
 import type { ModelMessage, ToolChoice } from 'ai-v5';
 import type { TracingContext, TracingOptions } from '../ai-tracing';
 import type { SystemMessage } from '../llm';

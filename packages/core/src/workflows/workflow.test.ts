@@ -15,8 +15,6 @@ import { cloneStep, cloneWorkflow, createStep, createWorkflow, mapVariable } fro
 
 const testStorage = new MockStore();
 
-(globalThis as any).___MASTRA_TELEMETRY___ = true;
-
 vi.mock('crypto', () => {
   return {
     randomUUID: vi.fn(() => 'mock-uuid-1'),

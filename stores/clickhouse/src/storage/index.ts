@@ -14,8 +14,6 @@ import type {
   TABLE_NAMES,
   WorkflowRun,
   WorkflowRuns,
-  StorageGetTracesArg,
-  StorageGetTracesPaginatedArg,
   StoragePagination,
   StorageDomains,
   PaginationArgs,
@@ -85,7 +83,6 @@ export class ClickhouseStore extends MastraStorage {
     const workflows = new WorkflowsStorageClickhouse({ client: this.db, operations });
     const scores = new ScoresStorageClickhouse({ client: this.db, operations });
     const legacyEvals = new LegacyEvalsStorageClickhouse({ client: this.db, operations });
-    const traces = new TracesStorageClickhouse({ client: this.db, operations });
     const memory = new MemoryStorageClickhouse({ client: this.db, operations });
 
     this.stores = {
@@ -93,7 +90,6 @@ export class ClickhouseStore extends MastraStorage {
       workflows,
       scores,
       legacyEvals,
-      traces,
       memory,
     };
   }
@@ -289,18 +285,6 @@ export class ClickhouseStore extends MastraStorage {
     workflowName?: string;
   }): Promise<WorkflowRun | null> {
     return this.stores.workflows.getWorkflowRunById({ runId, workflowName });
-  }
-
-  async getTraces(args: StorageGetTracesArg): Promise<any[]> {
-    return this.stores.traces.getTraces(args);
-  }
-
-  async getTracesPaginated(args: StorageGetTracesPaginatedArg): Promise<PaginationInfo & { traces: Trace[] }> {
-    return this.stores.traces.getTracesPaginated(args);
-  }
-
-  async batchTraceInsert(args: { records: Trace[] }): Promise<void> {
-    return this.stores.traces.batchTraceInsert(args);
   }
 
   async getThreadById({ threadId }: { threadId: string }): Promise<StorageThreadType | null> {

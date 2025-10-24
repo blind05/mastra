@@ -9,8 +9,6 @@ import type {
   StorageColumn,
   StorageDomains,
   StorageGetMessagesArg,
-  StorageGetTracesArg,
-  StorageGetTracesPaginatedArg,
   StoragePagination,
   StorageResourceType,
   TABLE_NAMES,
@@ -107,10 +105,6 @@ export class MongoDBStore extends MastraStorage {
       operations,
     });
 
-    const traces = new TracesStorageMongoDB({
-      operations,
-    });
-
     const legacyEvals = new LegacyEvalsMongoDB({
       operations,
     });
@@ -130,7 +124,6 @@ export class MongoDBStore extends MastraStorage {
     this.stores = {
       operations,
       memory,
-      traces,
       legacyEvals,
       scores,
       workflows,
@@ -258,18 +251,6 @@ export class MongoDBStore extends MastraStorage {
       }[];
   }): Promise<MastraMessageV2[]> {
     return this.stores.memory.updateMessages(_args);
-  }
-
-  async getTraces(args: StorageGetTracesArg): Promise<Trace[]> {
-    return this.stores.traces.getTraces(args);
-  }
-
-  async getTracesPaginated(args: StorageGetTracesPaginatedArg): Promise<PaginationInfo & { traces: Trace[] }> {
-    return this.stores.traces.getTracesPaginated(args);
-  }
-
-  async batchTraceInsert({ records }: { records: Record<string, any>[] }): Promise<void> {
-    return this.stores.traces.batchTraceInsert({ records });
   }
 
   async getWorkflowRuns(args?: {

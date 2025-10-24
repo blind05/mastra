@@ -402,34 +402,6 @@ export class BenchmarkStore extends MastraStorage {
     return parsedRun as WorkflowRun;
   }
 
-  async getTracesPaginated({
-    name,
-    scope,
-    attributes,
-    page,
-    perPage,
-    fromDate,
-    toDate,
-  }: {
-    name?: string;
-    scope?: string;
-    attributes?: Record<string, string>;
-    page: number;
-    perPage: number;
-    fromDate?: Date;
-    toDate?: Date;
-  }): Promise<PaginationInfo & { traces: Trace[] }> {
-    const traces = await this.getTraces({ name, scope, page, perPage, attributes, fromDate, toDate });
-    const total = Array.from(this.data.mastra_traces.values()).length;
-
-    return {
-      traces,
-      total,
-      page,
-      perPage,
-      hasMore: total > (page + 1) * perPage,
-    };
-  }
 
   async getThreadsByResourceIdPaginated(args: {
     resourceId: string;

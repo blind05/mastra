@@ -1,5 +1,3 @@
-import type { Span } from '@opentelemetry/api';
-import { context as otlpContext, trace } from '@opentelemetry/api';
 import type { Snapshot } from 'xstate';
 import type { z } from 'zod';
 import type { IMastraLogger } from '../../logger';
@@ -153,10 +151,6 @@ export class WorkflowInstance<
     return this.#runId;
   }
 
-  get executionSpan() {
-    return this.#executionSpan;
-  }
-
   watch(
     onTransition: (
       state: Pick<
@@ -216,10 +210,6 @@ export class WorkflowInstance<
       runtimeContext: RuntimeContext;
     } = { runtimeContext: new RuntimeContext() },
   ): Promise<Omit<WorkflowRunResult<TTriggerSchema, TSteps, TResult>, 'runId'>> {
-    this.#executionSpan = this.#mastra?.getTelemetry()?.tracer.startSpan(`workflow.${this.name}.execute`, {
-      attributes: { componentName: this.name, runId: this.runId },
-    });
-
     let machineInput = {
       // Maintain the original step results and their output
       steps: {},
@@ -254,7 +244,6 @@ export class WorkflowInstance<
       runId: this.runId,
       steps: this.#steps,
       stepGraph,
-      executionSpan: this.#executionSpan,
       startStepId,
       retryConfig: this.#retryConfig,
     });
@@ -388,7 +377,6 @@ export class WorkflowInstance<
           runId: this.runId,
           steps: this.#steps,
           stepGraph: this.#stepSubscriberGraph[key],
-          executionSpan: this.#executionSpan,
           startStepId: parentStepId,
         });
 
@@ -702,25 +690,6 @@ export class WorkflowInstance<
   #makeStepDef<TStepId extends TSteps[number]['id'], TSteps extends Step<any, any, any>[]>(
     stepId: TStepId,
   ): StepDef<TStepId, TSteps, any, any>[TStepId] {
-    const executeStep = (
-      handler: (data: any) => Promise<(data: any) => void>,
-      spanName: string,
-      attributes?: Record<string, string>,
-    ) => {
-      return async (data: any) => {
-        return await otlpContext.with(trace.setSpan(otlpContext.active(), this.#executionSpan as Span), async () => {
-          if (this.#mastra?.getTelemetry()) {
-            return this.#mastra.getTelemetry()?.traceMethod(handler, {
-              spanName,
-              attributes,
-            })(data);
-          } else {
-            return handler(data);
-          }
-        });
-      };
-    };
-
     // NOTE: destructuring rest breaks some injected runtime fields, like runId
     // TODO: investigate why that is exactly
     const handler = async ({ context, ...rest }: ActionContext<TSteps[number]['inputSchema']>) => {

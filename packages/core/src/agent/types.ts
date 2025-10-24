@@ -1,5 +1,5 @@
 import type { ProviderDefinedTool } from '@internal/external-types';
-import type { GenerateTextOnStepFinishCallback, TelemetrySettings, ToolSet } from 'ai';
+import type { GenerateTextOnStepFinishCallback, ToolSet } from 'ai';
 import type { JSONSchema7 } from 'json-schema';
 import type { ZodSchema } from 'zod';
 import type { AISpan, AISpanType, TracingContext, TracingOptions, TracingPolicy } from '../ai-tracing';

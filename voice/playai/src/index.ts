@@ -197,7 +197,6 @@ export class PlayAIVoice extends MastraVoice {
   async speak(input: string | NodeJS.ReadableStream, options?: { speaker?: string }): Promise<NodeJS.ReadableStream> {
     const text = typeof input === 'string' ? input : await this.streamToString(input);
 
-    return this.traced(async () => {
       const payload = {
         text,
         voice: options?.speaker || this.speaker,
@@ -230,7 +229,6 @@ export class PlayAIVoice extends MastraVoice {
       })();
 
       return stream;
-    }, 'voice.playai.speak')();
   }
 
   /**
@@ -250,19 +248,15 @@ export class PlayAIVoice extends MastraVoice {
   }
 
   async getSpeakers() {
-    return this.traced(
-      () =>
-        Promise.resolve(
-          PLAYAI_VOICES.map(voice => ({
-            voiceId: voice.id,
-            name: voice.name,
-            accent: voice.accent,
-            gender: voice.gender,
-            age: voice.age,
-            style: voice.style,
-          })),
-        ),
-      'voice.playai.voices',
-    )();
+    return Promise.resolve(
+      PLAYAI_VOICES.map(voice => ({
+        voiceId: voice.id,
+        name: voice.name,
+        accent: voice.accent,
+        gender: voice.gender,
+        age: voice.age,
+        style: voice.style,
+      })),
+    );
   }
 }

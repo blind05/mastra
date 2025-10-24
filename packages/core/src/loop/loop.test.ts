@@ -34,8 +34,6 @@ describe('Loop Tests', () => {
 
   // toolsTestsV5({ executeFn: execute, runId });
 
-  // telemetryTestsV5({ executeFn: execute, runId });
-
   // optionsTestsV5({ executeFn: execute, runId });
 
   // resultObjectTestsV5({ executeFn: execute, runId });

@@ -1497,7 +1497,7 @@ export class Agent<
         inputProcessorOverrides,
       });
       try {
-        messageList = await runner.runInputProcessors(messageList, tracingContext, undefined);
+        messageList = await runner.runInputProcessors(messageList, tracingContext);
       } catch (error) {
         if (error instanceof TripWire) {
           tripwireTriggered = true;
@@ -1552,7 +1552,7 @@ export class Agent<
       });
 
       try {
-        messageList = await runner.runOutputProcessors(messageList, tracingContext, undefined);
+        messageList = await runner.runOutputProcessors(messageList, tracingContext);
       } catch (e) {
         if (e instanceof TripWire) {
           tripwireTriggered = true;
@@ -3400,7 +3400,6 @@ export class Agent<
       executeOnFinish: this.#executeOnFinish.bind(this),
       outputProcessors: this.#outputProcessors,
       llm,
-      getTelemetry: this.#mastra?.getTelemetry?.bind(this.#mastra),
     };
 
     // Create the workflow with all necessary context
@@ -3760,7 +3759,6 @@ export class Agent<
     const baseStreamOptions = {
       ...defaultStreamOptions,
       ...(streamOptions ?? {}),
-      onFinish: this.#mergeOnFinishWithTelemetry(streamOptions, defaultStreamOptions),
     };
 
     // Deprecated `output` option now just maps to structuredOutput.schema
@@ -3863,7 +3861,6 @@ export class Agent<
     let mergedStreamOptions = {
       ...defaultStreamOptions,
       ...streamOptions,
-      onFinish: this.#mergeOnFinishWithTelemetry(streamOptions, defaultStreamOptions),
     };
 
     const llm = await this.getLLM({
@@ -4350,7 +4347,6 @@ export class Agent<
     const mergedStreamOptions: AgentStreamOptions<OUTPUT, EXPERIMENTAL_OUTPUT> = {
       ...defaultStreamOptions,
       ...streamOptions,
-      onFinish: this.#mergeOnFinishWithTelemetry(streamOptions, defaultStreamOptions),
       experimental_generateMessageId:
         defaultStreamOptions.experimental_generateMessageId || this.#mastra?.generateId?.bind(this.#mastra),
     };

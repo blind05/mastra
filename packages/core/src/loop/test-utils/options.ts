@@ -15,9 +15,7 @@ import {
 } from 'ai-v5/test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import z from 'zod';
-import { MessageList } from '../../agent/message-list';
 import type { loop } from '../loop';
-import { MockTracer } from './mockTracer';
 import {
   createTestModels,
   testUsage,
@@ -259,7 +257,6 @@ export function optionsTests({ loopFn, runId }: { loopFn: typeof loop; runId: st
     let stepInputs: Array<any>;
 
     beforeEach(() => {
-      tracer = new MockTracer();
       stepInputs = [];
     });
 
@@ -356,7 +353,6 @@ export function optionsTests({ loopFn, runId }: { loopFn: typeof loop; runId: st
               onStepFinishResults.push(event);
             },
           },
-          telemetry_settings: { isEnabled: true, tracer },
           stopWhen: stepCountIs(3),
           _internal: {
             now: mockValues(0, 100, 500, 600, 1000),
@@ -1953,7 +1949,6 @@ export function optionsTests({ loopFn, runId }: { loopFn: typeof loop; runId: st
     //       onStepFinish: async event => {
     //         onStepFinishResults.push(event);
     //       },
-    //       experimental_telemetry: { isEnabled: true, tracer },
     //       stopWhen: stepCountIs(3),
     //       _internal: {
     //         now: mockValues(0, 100, 500, 600, 1000),
@@ -2918,7 +2913,6 @@ export function optionsTests({ loopFn, runId }: { loopFn: typeof loop; runId: st
             },
           },
           messageList,
-          telemetry_settings: { isEnabled: true, tracer },
           stopWhen: [
             ({ steps }) => {
               stopConditionCalls.push({ number: 0, steps });

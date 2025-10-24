@@ -116,7 +116,6 @@ export class SarvamVoice extends MastraVoice {
   ): Promise<NodeJS.ReadableStream> {
     const text = typeof input === 'string' ? input : await this.streamToString(input);
 
-    return this.traced(async () => {
       const payload = {
         inputs: [text],
         target_language_code: this.language,
@@ -142,15 +141,12 @@ export class SarvamVoice extends MastraVoice {
       stream.end();
 
       return stream;
-    }, 'voice.sarvam.speak')();
   }
 
   async getSpeakers() {
-    return this.traced(async () => {
       return SARVAM_VOICES.map(voice => ({
         voiceId: voice,
       }));
-    }, 'voice.deepgram.getSpeakers')();
   }
 
   /**
@@ -163,7 +159,6 @@ export class SarvamVoice extends MastraVoice {
   }
 
   async listen(input: NodeJS.ReadableStream, options?: SarvamListenOptions): Promise<string> {
-    return this.traced(async () => {
       // Collect audio data into buffer
       const chunks: Buffer[] = [];
       for await (const chunk of input) {
@@ -199,6 +194,5 @@ export class SarvamVoice extends MastraVoice {
         console.error('Error during speech-to-text request:', error);
         throw error;
       }
-    }, 'voice.sarvam.listen')();
   }
 }

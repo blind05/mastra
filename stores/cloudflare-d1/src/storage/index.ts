@@ -9,7 +9,6 @@ import type {
   PaginationInfo,
   StorageColumn,
   StorageGetMessagesArg,
-  StorageGetTracesPaginatedArg,
   StorageResourceType,
   TABLE_NAMES,
   WorkflowRun,
@@ -24,7 +23,6 @@ import { LegacyEvalsStorageD1 } from './domains/legacy-evals';
 import { MemoryStorageD1 } from './domains/memory';
 import { StoreOperationsD1 } from './domains/operations';
 import { ScoresStorageD1 } from './domains/scores';
-import { TracesStorageD1 } from './domains/traces';
 import { WorkflowsStorageD1 } from './domains/workflows';
 
 /**
@@ -147,10 +145,6 @@ export class D1Store extends MastraStorage {
       operations,
     });
 
-    const traces = new TracesStorageD1({
-      operations,
-    });
-
     const workflows = new WorkflowsStorageD1({
       operations,
     });
@@ -163,7 +157,6 @@ export class D1Store extends MastraStorage {
       operations,
       scores,
       legacyEvals,
-      traces,
       workflows,
       memory,
     };
@@ -397,25 +390,6 @@ export class D1Store extends MastraStorage {
    */
   async batchInsert({ tableName, records }: { tableName: TABLE_NAMES; records: Record<string, any>[] }): Promise<void> {
     return this.stores.operations.batchInsert({ tableName, records });
-  }
-
-  /**
-   * @deprecated use getTracesPaginated instead
-   */
-  async getTraces(args: {
-    name?: string;
-    scope?: string;
-    page: number;
-    perPage: number;
-    attributes?: Record<string, string>;
-    fromDate?: Date;
-    toDate?: Date;
-  }): Promise<Trace[]> {
-    return this.stores.traces.getTraces(args);
-  }
-
-  public async getTracesPaginated(args: StorageGetTracesPaginatedArg): Promise<PaginationInfo & { traces: Trace[] }> {
-    return this.stores.traces.getTracesPaginated(args);
   }
 
   /**

@@ -24,8 +24,6 @@ import type {
   GetLogsResponse,
   GetMemoryThreadParams,
   GetMemoryThreadResponse,
-  GetTelemetryParams,
-  GetTelemetryResponse,
   GetToolResponse,
   GetWorkflowResponse,
   SaveMessageToMemoryParams,

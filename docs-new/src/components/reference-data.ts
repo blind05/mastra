@@ -64,7 +64,6 @@ export const referenceSections: Record<string, Array<{ title: string; href: stri
     { title: 'GetScorers', href: '/docs/reference/core/getScorers' },
     { title: 'GetServer', href: '/docs/reference/core/getServer' },
     { title: 'GetStorage', href: '/docs/reference/core/getStorage' },
-    { title: 'GetTelemetry', href: '/docs/reference/core/getTelemetry' },
     { title: 'GetVector', href: '/docs/reference/core/getVector' },
     { title: 'GetVectors', href: '/docs/reference/core/getVectors' },
     { title: 'GetWorkflow', href: '/docs/reference/core/getWorkflow' },
@@ -72,7 +71,6 @@ export const referenceSections: Record<string, Array<{ title: string; href: stri
     { title: 'Mastra Class', href: '/docs/reference/core/mastra-class' },
     { title: 'SetLogger', href: '/docs/reference/core/setLogger' },
     { title: 'SetStorage', href: '/docs/reference/core/setStorage' },
-    { title: 'SetTelemetry', href: '/docs/reference/core/setTelemetry' },
   ],
   Deployer: [
     { title: 'Cloudflare', href: '/docs/reference/deployer/cloudflare' },

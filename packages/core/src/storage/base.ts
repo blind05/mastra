@@ -22,7 +22,6 @@ import type {
   ScoresStorage,
   StoreOperations,
   WorkflowsStorage,
-  TracesStorage,
   MemoryStorage,
   LegacyEvalsStorage,
   ObservabilityStorage,
@@ -37,9 +36,7 @@ import type {
   ThreadSortOptions,
   WorkflowRun,
   WorkflowRuns,
-  StorageGetTracesArg,
   PaginationArgs,
-  StorageGetTracesPaginatedArg,
   AISpanRecord,
   AITraceRecord,
   AITracesPaginatedArg,
@@ -55,7 +52,6 @@ export type StorageDomains = {
   operations: StoreOperations;
   workflows: WorkflowsStorage;
   scores: ScoresStorage;
-  traces: TracesStorage;
   memory: MemoryStorage;
   observability?: ObservabilityStorage;
 };
@@ -212,13 +208,6 @@ export abstract class MastraStorage extends MastraBase {
     tableName: TABLE_NAMES;
     records: Record<string, any>[];
   }): Promise<void>;
-
-  batchTraceInsert({ records }: { records: Record<string, any>[] }): Promise<void> {
-    if (this.stores?.traces) {
-      return this.stores.traces.batchTraceInsert({ records });
-    }
-    return this.batchInsert({ tableName: TABLE_TRACES, records });
-  }
 
   abstract load<R>({ tableName, keys }: { tableName: TABLE_NAMES; keys: Record<string, any> }): Promise<R | null>;
 

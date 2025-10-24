@@ -3,10 +3,8 @@ import type { generateText as generateText5 } from 'ai-v5';
 import { convertArrayToReadableStream, mockId, MockLanguageModelV2 } from 'ai-v5/test';
 import { assertType, describe, expect, it } from 'vitest';
 import z from 'zod';
-import { MessageList } from '../../agent/message-list';
 import type { loop } from '../loop';
 import type { LoopOptions } from '../types';
-import { MockTracer } from './mockTracer';
 import {
   createMessageListWithUserMessage,
   createTestModels,
@@ -1979,129 +1977,6 @@ export function generateTextTestsV5({ loopFn, runId }: { loopFn: typeof loop; ru
     //   });
     // });
 
-    it('should record successful tool call', async () => {
-      const tracer = new MockTracer();
-      const messageList = createMessageListWithUserMessage();
-      await generateText({
-        agentId: 'agent-id',
-        models: [
-          {
-            id: 'test-model',
-            maxRetries: 0,
-            model: new MockLanguageModelV2({
-              doStream: async ({}) => ({
-                ...dummyResponseValues,
-                stream: convertArrayToReadableStream([
-                  {
-                    type: 'tool-call',
-                    toolCallType: 'function',
-                    toolCallId: 'call-1',
-                    toolName: 'tool1',
-                    input: `{ "value": "value" }`,
-                  },
-                  {
-                    type: 'finish',
-                    finishReason: 'stop',
-                    usage: testUsage,
-                  },
-                ]),
-              }),
-            }),
-          },
-        ],
-        tools: {
-          tool1: {
-            inputSchema: z.object({ value: z.string() }),
-            execute: async () => 'result1',
-          },
-        },
-        messageList,
-        mode: 'generate',
-        telemetry_settings: {
-          isEnabled: true,
-          tracer,
-        },
-        _internal: {
-          generateId: () => 'test-id',
-          now: () => new Date(0).getTime(),
-        },
-      });
-
-      expect(tracer.jsonSpans).toMatchInlineSnapshot(`
-        [
-          {
-            "attributes": {
-              "aisdk.model.id": "mock-model-id",
-              "aisdk.model.provider": "mock-provider",
-              "mastra.operationId": "mastra.generate",
-              "operation.name": "mastra.generate",
-              "stream.prompt.messages": "[{"role":"user","content":[{"type":"text","text":"test-input"}]}]",
-              "stream.response.finishReason": "stop",
-              "stream.response.text": "",
-              "stream.response.toolCalls": "[{"type":"tool-call","toolCallId":"call-1","args":{"value":"value"},"toolName":"tool1"}]",
-              "stream.settings.maxRetries": 2,
-              "stream.usage.inputTokens": 3,
-              "stream.usage.outputTokens": 10,
-              "stream.usage.totalTokens": 13,
-            },
-            "events": [],
-            "name": "mastra.generate",
-          },
-          {
-            "attributes": {
-              "aisdk.model.id": "mock-model-id",
-              "aisdk.model.provider": "mock-provider",
-              "mastra.operationId": "mastra.generate.aisdk.doStream",
-              "operation.name": "mastra.generate.aisdk.doStream",
-              "stream.prompt.messages": "[{"role":"user","content":[{"type":"text","text":"test-input"}]}]",
-              "stream.prompt.toolChoice": "auto",
-              "stream.prompt.tools": [
-                "{"type":"function","name":"tool1","inputSchema":{"type":"object","properties":{"value":{"type":"string"}},"required":["value"],"additionalProperties":false,"$schema":"http://json-schema.org/draft-07/schema#"}}",
-              ],
-              "stream.response.avgOutputTokensPerSecond": Infinity,
-              "stream.response.finishReason": "stop",
-              "stream.response.id": "test-id",
-              "stream.response.model": "mock-model-id",
-              "stream.response.msToFinish": 0,
-              "stream.response.msToFirstChunk": 0,
-              "stream.response.text": "",
-              "stream.response.timestamp": "1970-01-01T00:00:00.000Z",
-              "stream.response.toolCalls": "[{"toolCallId":"call-1","args":{"value":"value"},"toolName":"tool1"}]",
-              "stream.settings.maxRetries": 2,
-              "stream.usage.inputTokens": 3,
-              "stream.usage.outputTokens": 10,
-              "stream.usage.totalTokens": 13,
-            },
-            "events": [
-              {
-                "attributes": {
-                  "ai.response.msToFirstChunk": 0,
-                },
-                "name": "ai.stream.firstChunk",
-              },
-              {
-                "attributes": undefined,
-                "name": "ai.stream.finish",
-              },
-            ],
-            "name": "mastra.generate.aisdk.doStream",
-          },
-          {
-            "attributes": {
-              "mastra.operationId": "mastra.stream.toolCall",
-              "operation.name": "mastra.stream.toolCall",
-              "stream.toolCall.args": "{"value":"value"}",
-              "stream.toolCall.result": ""result1"",
-              "stream.toolCall.toolCallId": "call-1",
-              "stream.toolCall.toolName": "tool1",
-            },
-            "events": [],
-            "name": "mastra.stream.toolCall",
-          },
-        ]
-      `);
-    });
-
     //   it('should record error on tool call', async () => {
     //     await generateText({
     //       model: new MockLanguageModelV2({
@@ -2127,10 +2002,6 @@ export function generateTextTestsV5({ loopFn, runId }: { loopFn: typeof loop; ru
     //         },
     //       },
     //       prompt: 'test-input',
-    //       experimental_telemetry: {
-    //         isEnabled: true,
-    //         tracer,
-    //       },
     //       _internal: {
     //         generateId: () => 'test-id',
     //         currentDate: () => new Date(0),

@@ -1,6 +1,4 @@
 import { randomUUID } from 'crypto';
-import { context as otlpContext, trace } from '@opentelemetry/api';
-import type { Span } from '@opentelemetry/api';
 import type { AISpan, TracingContext } from '../ai-tracing';
 import { AISpanType, wrapMastra, selectFields } from '../ai-tracing';
 import type { RuntimeContext } from '../di';
@@ -52,7 +50,6 @@ export type ExecutionContext = {
     attempts: number;
     delay: number;
   };
-  executionSpan: Span;
   format?: 'legacy' | 'vnext' | undefined;
   state: Record<string, any>;
 };
@@ -116,7 +113,6 @@ export class DefaultExecutionEngine extends ExecutionEngine {
   }
 
   protected async fmtReturnValue<TOutput>(
-    executionSpan: Span | undefined,
     emitter: Emitter,
     stepResults: Record<string, StepResult<any, any, any, any>>,
     lastOutput: StepResult<any, any, any, any>,
@@ -193,7 +189,6 @@ export class DefaultExecutionEngine extends ExecutionEngine {
       });
     }
 
-    executionSpan?.end();
     return base as TOutput;
   }
 
@@ -266,10 +261,6 @@ export class DefaultExecutionEngine extends ExecutionEngine {
       throw empty_graph_error;
     }
 
-    const executionSpan = this.mastra?.getTelemetry()?.tracer.startSpan(`workflow.${workflowId}.execute`, {
-      attributes: { componentName: workflowId, runId, resourceId },
-    });
-
     let startIdx = 0;
     if (resume?.resumePath) {
       startIdx = resume.resumePath[0]!;
@@ -289,7 +280,6 @@ export class DefaultExecutionEngine extends ExecutionEngine {
         suspendedPaths: {},
         resumeLabels: {},
         retryConfig: { attempts, delay },
-        executionSpan: executionSpan as Span,
         format: params.format,
         state: lastState ?? initialState,
       };
@@ -326,7 +316,6 @@ export class DefaultExecutionEngine extends ExecutionEngine {
           }
 
           const result = (await this.fmtReturnValue(
-            executionSpan,
             params.emitter,
             stepResults,
             lastOutput.result,
@@ -378,7 +367,6 @@ export class DefaultExecutionEngine extends ExecutionEngine {
           'Error executing step: ',
         );
         const result = (await this.fmtReturnValue(
-          executionSpan,
           params.emitter,
           stepResults,
           lastOutput.result,
@@ -409,7 +397,7 @@ export class DefaultExecutionEngine extends ExecutionEngine {
     }
 
     // after all steps are successful, return result
-    const result = (await this.fmtReturnValue(executionSpan, params.emitter, stepResults, lastOutput.result)) as any;
+    const result = (await this.fmtReturnValue(params.emitter, stepResults, lastOutput.result)) as any;
     await this.persistStepUpdate({
       workflowId,
       runId,
@@ -1217,7 +1205,6 @@ export class DefaultExecutionEngine extends ExecutionEngine {
             suspendedPaths: executionContext.suspendedPaths,
             resumeLabels: executionContext.resumeLabels,
             retryConfig: executionContext.retryConfig,
-            executionSpan: executionContext.executionSpan,
             state: executionContext.state,
           },
           tracingContext: {
@@ -1455,7 +1442,6 @@ export class DefaultExecutionEngine extends ExecutionEngine {
             suspendedPaths: executionContext.suspendedPaths,
             resumeLabels: executionContext.resumeLabels,
             retryConfig: executionContext.retryConfig,
-            executionSpan: executionContext.executionSpan,
             state: executionContext.state,
           },
           tracingContext: {
@@ -2156,7 +2142,7 @@ export class DefaultExecutionEngine extends ExecutionEngine {
           suspendedPaths: executionContext.suspendedPaths,
           resumeLabels: executionContext.resumeLabels,
           retryConfig: executionContext.retryConfig,
-          executionSpan: executionContext.executionSpan,
+
           state: executionContext.state,
         },
         tracingContext,

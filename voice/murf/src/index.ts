@@ -97,7 +97,6 @@ export class MurfVoice extends MastraVoice {
   ): Promise<NodeJS.ReadableStream> {
     const text = typeof input === 'string' ? input : await this.streamToString(input);
 
-    return this.traced(async () => {
       const response = await this.client
         .post('v1/speech/generate', {
           json: {
@@ -139,7 +138,6 @@ export class MurfVoice extends MastraVoice {
       });
 
       return stream;
-    }, 'voice.murf.speak')();
   }
 
   /**
@@ -159,14 +157,12 @@ export class MurfVoice extends MastraVoice {
   }
 
   async getSpeakers() {
-    return this.traced(async () => {
       return MURF_VOICES.map(voice => ({
         voiceId: voice,
         name: voice,
         language: voice.split('-')[0],
         gender: 'neutral',
       }));
-    }, 'voice.murf.getSpeakers')();
   }
 }
 

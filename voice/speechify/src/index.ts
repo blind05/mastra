@@ -33,14 +33,10 @@ export class SpeechifyVoice extends MastraVoice {
   }
 
   async getSpeakers() {
-    return this.traced(
-      () =>
-        SPEECHIFY_VOICES.map(voice => ({
+    return SPEECHIFY_VOICES.map(voice => ({
           voiceId: voice,
           name: voice,
-        })),
-      'voice.speechify.voices',
-    )();
+        }));
   }
 
   private async streamToString(stream: NodeJS.ReadableStream): Promise<string> {
@@ -63,7 +59,6 @@ export class SpeechifyVoice extends MastraVoice {
   ): Promise<NodeJS.ReadableStream> {
     const text = typeof input === 'string' ? input : await this.streamToString(input);
 
-    return this.traced(async () => {
       const request: AudioStreamRequest = {
         input: text,
         model: (options?.model || this.speechModel?.name) as VoiceModelName,
@@ -94,7 +89,6 @@ export class SpeechifyVoice extends MastraVoice {
       });
 
       return nodeStream;
-    }, 'voice.speechify.speak')();
   }
 
   /**
